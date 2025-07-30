@@ -2,7 +2,7 @@
 #- 1. IMPORTAR BIBLIOTECAS - 
 #---------------------------
 
-# Importa função que importa as bibliotecas
+# Importa funções
 source(here("code", "functions.R"))
 
 # Lista de pacotes a serem importados

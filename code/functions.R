@@ -17,6 +17,12 @@ importa_pacotes <- function(pacotes) {
 #------------------------------------------------
 
 # Função para excluir de um dataframe qualquer coluna com "source"
-exclui_source
+exclui_source <- function(dataframe) {
+  # Exclui todas as colunas que contém "source" no nome
+  dataframe <- dataframe %>% 
+    select(-contains("source"))
+  # Retorna a base limpa
+  return(dataframe)
+}
 
 
