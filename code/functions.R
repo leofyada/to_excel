@@ -12,3 +12,8 @@ importa_pacotes <- function(pacotes) {
   }
 }
 
+#------------------------------------
+#- 2. FUNÇÃO PARA IMPORTAR ARQUIVOS -
+#------------------------------------
+
+
