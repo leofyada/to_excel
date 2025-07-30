@@ -1,4 +1,11 @@
 ### R ###
+
+# Data 
+data/
+
+# Script 
+Analu.updated.qmd
+
 # History files
 .Rhistory
 .Rapp.history
