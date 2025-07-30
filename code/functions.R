@@ -12,8 +12,11 @@ importa_pacotes <- function(pacotes) {
   }
 }
 
-#------------------------------------
-#- 2. FUNÇÃO PARA IMPORTAR ARQUIVOS -
-#------------------------------------
+#------------------------------------------------
+#- 2. FUNÇÃO PARA EXCLUIR AS COLUNAS DAS FONTES -
+#------------------------------------------------
+
+# Função para excluir de um dataframe qualquer coluna com "source"
+exclui_source
 
 
