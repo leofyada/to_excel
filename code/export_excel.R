@@ -23,5 +23,10 @@ saveWorkbook(wb, file = here("data", paste0(data_hoje(), "_calculadora.xlsx")), 
 #- 2. CRIA PLANILHA COM OS RESULTADOS DOS CÁLCULOS (COM FÓRMULAS) - 
 #------------------------------------------------------------------
 
-
+# Write formula in column D (summing Value1 and Value2)
+writeFormula(
+  wb, sheet = "Sheet1", 
+  x = paste0("=B", 2:4, "+C", 2:4), 
+  startCol = 4, 
+  startRow = 2)
 
