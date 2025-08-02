@@ -4,6 +4,8 @@
 
 # Importa funções
 source(here("code", "functions.R"))
+# Importa a base limpa
+df_parametros_limpa <- data.table::fread(here("data", "base_parametros_limpa.csv"))
 
 # A) Cria um arquivo Excel e adiciona uma planilha 
 

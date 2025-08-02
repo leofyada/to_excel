@@ -2,8 +2,15 @@
 #- 1. IMPORTAR BIBLIOTECAS - 
 #---------------------------
 
-# Importa funções
-source(here("code", "functions.R"))
+# Função para importar os pacotes ou instalar (caso não esteja instalado)
+importa_pacotes <- function(pacotes) {
+  for (pct in pacotes) {
+    if (!require(pct, character.only = TRUE)) {
+      install.packages(pct, dependencies = TRUE)
+      library(pct, character.only = TRUE)
+    }
+  }
+}
 
 # Lista de pacotes a serem importados
 pacotes <- c(
