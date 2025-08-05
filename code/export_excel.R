@@ -9,7 +9,8 @@ df_parametros_limpa <- data.table::fread(here("data", "base_parametros_limpa.csv
 # Lista de países
 lista_paises <- df_parametros_limpa$country
 
-lista_paises <- c("Argentina", "Bahamas")
+# Teste
+#lista_paises <- c("Argentina", "Bahamas")
 
 # Gera arquivos em excel
 for(pais in lista_paises) {
