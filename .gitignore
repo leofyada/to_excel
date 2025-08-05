@@ -3,6 +3,9 @@
 # Data 
 data/
 
+# Output
+output/
+
 # Script 
 Analu.updated.qmd
 
