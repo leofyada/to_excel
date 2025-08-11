@@ -16,6 +16,7 @@ importa_pacotes <- function(pacotes) {
 pacotes <- c(
   "here",       # Evita problemas de caminhos dos arquivos
   "openxlsx",   # Permite trabalhar com Excel diretamente do R
+  "openxlsx2",  # Permite trabalhar com Excel diretamente do R
   "tidyverse",  # Permite manipular dataframes 
   "data.table", # Permite manipular arquivos .csv
   "reshape2",   # Permite converter long para wide e vice versa

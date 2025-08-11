@@ -36,53 +36,36 @@ data_hoje <- function() {
   return(data_hoje_formatada)
 }
 
-#--------------------------------------
-#- 4. FUNÇÃO PARA ELABORAR A PLANILHA - 
-#--------------------------------------
+#------------------------------------------------------------
+#- 4. FUNÇÃO PARA CRIAR O WORKBOOK E A PLANILHA DESCRIPTION - 
+#------------------------------------------------------------
 
-# Função para criar as planilhas
-funcao_excel <- function(pais, caminho_output, df_base, description) {
-  
-  df_base <- df_base %>% filter(country==pais)
-  df_base_reshaped <- reshape2::melt(data=df_base, id.vars = c("country", "subregion"))
-  country <- tolower(as.character(df_base %>% select(country)))
-  
-  
-  
-  # A) Cria um arquivo Excel e adiciona uma planilha 
+# Função para criar o workbook e a planilha de descrição do arquivo
+funcao_description <- function() {
   
   # Cria um workbook (arquivo Excel) 
   wb <- createWorkbook()
-  
-  # Description sheet
-  
+  # Adiciona uma planilha denominada "Description" (instruções iniciais)
   addWorksheet(wb, "Description")
-  #writeData(wb, sheet = "Description", x = description)
   
-  # Define styles
-  title_style <- createStyle(fontSize = 18, textDecoration = "bold", halign = "left")
-  section_style <- createStyle(fontSize = 14, textDecoration = "bold", halign = "left")
-  text_style <- createStyle(fontSize = 12, halign = "left")
+  # Define os estilos utilizados na planilha
+  estilo_titulo <- createStyle(fontSize = 18, textDecoration = "bold", halign = "left")
+  estilo_secao <- createStyle(fontSize = 14, textDecoration = "bold", halign = "left")
+  estilo_texto <- createStyle(fontSize = 12, halign = "left")
   
-  # Write Title
+  # Título (conteúdo e estilo)
   writeData(wb, "Description", "📘 Calculator Overview", startRow = 1, startCol = 1)
-  addStyle(wb, "Description", style = title_style, rows = 1, cols = 1)
+  addStyle(wb, "Description", style = estilo_titulo, rows = 1, cols = 1)
   
-  # Blank row
-  writeData(wb, "Description", "", startRow = 2, startCol = 1)
-  
-  # Section 1: Purpose
+  # Seção 1: Objetivo
+  addStyle(wb, "Description", style = estilo_secao, rows = 3, cols = 1)
   writeData(wb, "Description", "Purpose of the Calculator", startRow = 3, startCol = 1)
-  addStyle(wb, "Description", style = section_style, rows = 3, cols = 1)
   writeData(wb, "Description", "This calculator estimates the cost of buying technological products and services in different scenarios.", startRow = 4, startCol = 1)
-  addStyle(wb, "Description", style = text_style, rows = 4, cols = 1)
+  addStyle(wb, "Description", style = estilo_texto, rows = 4, cols = 1)
   
-  # Blank row
-  writeData(wb, "Description", "", startRow = 5, startCol = 1)
-  
-  # Section 2: Sheets
+  # Seção 2: Planilhas
   writeData(wb, "Description", "Sheet Overview", startRow = 6, startCol = 1)
-  addStyle(wb, "Description", style = section_style, rows = 6, cols = 1)
+  addStyle(wb, "Description", style = estilo_secao, rows = 6, cols = 1)
   
   sheets <- c(
     "1. Inputs: where you input your raw data.",
@@ -92,11 +75,11 @@ funcao_excel <- function(pais, caminho_output, df_base, description) {
   )
   
   writeData(wb, "Description", sheets, startRow = 7, startCol = 1)
-  addStyle(wb, "Description", style = text_style, rows = 7:9, cols = 1, gridExpand = TRUE)
+  addStyle(wb, "Description", style = estilo_texto, rows = 7:9, cols = 1, gridExpand = TRUE)
   
-  # Section 3: Scenarios
+  # Seção 3: Cenários
   writeData(wb, "Description", "Scenarios", startRow = 12, startCol = 1)
-  addStyle(wb, "Description", style = section_style, rows = 12, cols = 1)
+  addStyle(wb, "Description", style = estilo_secao, rows = 12, cols = 1)
   
   scenarios <- c(
     "1. Only secondary students.",
@@ -105,992 +88,1584 @@ funcao_excel <- function(pais, caminho_output, df_base, description) {
   )
   
   writeData(wb, "Description", scenarios, startRow = 13, startCol = 1)
-  addStyle(wb, "Description", style = text_style, rows = 13:16, cols = 1, gridExpand = TRUE)
+  addStyle(wb, "Description", style = estilo_texto, rows = 13:16, cols = 1, gridExpand = TRUE)
   
-  # Optional: set column width
-  setColWidths(wb, "Description", cols = 1, widths = 100)
+  # Largura da coluna 1
+  setColWidths(wb, "Description", cols = 1, widths = 90)
+  
+  # Retorna workbook
+  return(wb)
+
+}
+# Função para adicionar a planilha de inputs 
+funcao_inputs <- function(pais, wb, df_base_planilha_aj) {
   
   # Adiciona uma planilha ao arquivo criado
   addWorksheet(wb, "Inputs")
-  
-  # B) Inclui os dados iniciais na planilha 1
-  
   # Inclui a base de dados na planilha 1
-  writeData(wb, sheet = "Inputs", x = df_base_reshaped, startCol = 1, startRow = 1)
+  writeData(wb, sheet = "Inputs", x = df_base_planilha_aj, startCol = 1, startRow = 1)
+  # Estabelece o tamanho da coluna 3, que possui os nomes das variáveis
+  setColWidths(wb, sheet = "Inputs", cols = 3, widths = 50) 
   
-  #------------------------------------------------------------------
-  #- 2. CRIA PLANILHA COM OS RESULTADOS DOS CÁLCULOS (COM FÓRMULAS) - 
-  #------------------------------------------------------------------
+  # Estabelece os estilos das colunas da planilha
+  
+  # Inclui bordas  
+  addStyle(wb, sheet="Inputs", general_style, rows = 1:64, cols = 1)
+  addStyle(wb, sheet="Inputs", general_style, rows = 1:64, cols = 2)
+  addStyle(wb, sheet="Inputs", general_style, rows = 1:64, cols = 3)
+  # Ajusta as variáveis numéricas
+  addStyle(wb, sheet="Inputs", num_style, rows = 1:64, cols = 4)
+  
+  # Retorna workbook
+  return(wb)
+  
+}
+# Função para adicionar as planilhas com fórmulas
+funcao_formulas <- function(wb, df) {
+  
+  # Mapeia as referências das células
+  map_df <- df %>%
+    distinct(variable, .keep_all = TRUE) %>%
+    select(variable, cell_refs) %>%
+    deframe()  
+  map_df <- map_df[order(nchar(names(map_df)), decreasing = TRUE)]
+  
+  #---- Results -----
   
   # Adiciona uma planilha ao arquivo criado
   addWorksheet(wb, "Results")
   
-  # Fórmula 1: Nome do país
-  writeFormula(wb, sheet="Results", x=paste0("=Inputs!A", 1:2), startCol=1, startRow=1)
-  # Fórmula 2: Nome da subregião
-  writeFormula(wb, sheet="Results", x=paste0("=Inputs!B", 1:2), startCol=2, startRow=1)
+  # Nome do país
+  writeFormula(wb, sheet="Results", x=paste0("=Inputs!A", 1), startCol=1, startRow=1)
+  writeFormula(wb, sheet="Results", x=paste0("=Inputs!A", 2), startCol=2, startRow=1)
+  # Nome da subregião
+  writeFormula(wb, sheet="Results", x=paste0("=Inputs!B", 1), startCol=1, startRow=2)
+  writeFormula(wb, sheet="Results", x=paste0("=Inputs!B", 2), startCol=2, startRow=2)
   
-  #---------- CÁLCULO GERAL (CENÁRIO 0) ----------
-  # Fórmulas para calcular as dimensões
+  #---- Results: Cenário geral ----
   
-  # Fórmula 3: Dimensão 1 - Fiber expansion
-  writeData(wb, sheet = "Results", x="dim_1_price_fiber_exp", startCol=3, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D16*Inputs!D2*Inputs!D46*Inputs!D20", startCol=3, startRow=2)
-  # Fórmula 4: Dimensão 1 - Satellite service
-  writeData(wb, sheet = "Results", x="dim_1_price_satellite_service", startCol=4, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D15*Inputs!D2*Inputs!D18*Inputs!D45", startCol=4, startRow=2)
-  # Fórmula 5: Dimensão 1 - Fiber link
-  writeData(wb, sheet = "Results", x="dim_1_price_fiber_link", startCol=5, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D14*Inputs!D2*Inputs!D12*(Inputs!D19/200)*Inputs!D45", startCol=5, startRow=2)
-  # Fórmula 6: Dimensão 1 - Access point
-  writeData(wb, sheet = "Results", x="dim_1_price_access_point", startCol=6, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5/ 25)+Inputs!D8*3)+((Inputs!D6/35)+Inputs!D9*3))*Inputs!D47*Inputs!D21", startCol=6, startRow=2)
-  # Fórmula 7: Dimensão 1 - Firewall
-  writeData(wb, sheet = "Results", x="dim_1_price_firewall", startCol=7, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D48*Inputs!D22", startCol=7, startRow=2)
-  # Fórmula 8: Dimensão 1 - Nobreak
-  writeData(wb, sheet = "Results", x="dim_1_price_nobreak", startCol=8, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D49*Inputs!D23", startCol=8, startRow=2)
-  # Fórmula 9: Dimensão 1 - Switch
-  writeData(wb, sheet = "Results", x="dim_1_price_switch", startCol=9, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D50*Inputs!D24", startCol=9, startRow=2)
-  # Fórmula 10: Dimensão 1 - Rack 6U/8U
-  writeData(wb, sheet = "Results", x="dim_1_price_rack", startCol=10, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D51*Inputs!D25", startCol=10, startRow=2)
+  # Dimensão 1 - Fiber expansion
+  writeData(wb, sheet = "Results", x="dim_1_price_fiber_exp", startCol=1, startRow=3)
   
-  # Fórmula 11: Dimensão 2 - Device per students (Min Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_device_student_min", startCol=11, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D5*Inputs!D52*Inputs!D30)+(Inputs!D6*Inputs!D53*Inputs!D32)", startCol=11, startRow=2)
-  # Fórmula 12: Dimensão 2 - Device per students (Mild Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_device_student_mild", startCol=12, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D5*Inputs!D54*Inputs!D30)+(Inputs!D6*Inputs!D55*Inputs!D32)", startCol=12, startRow=2)
-  # Fórmula 13: Dimensão 2 - Device per students (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_device_student_comprehensive", startCol=13, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D5*Inputs!D56*Inputs!D30)+(Inputs!D6*Inputs!D57*Inputs!D32)", startCol=13, startRow=2)
-  # Fórmula 14: Dimensão 2 - Devices per teacher 
-  writeData(wb, sheet = "Results", x="dim_2_price_device_teacher", startCol=14, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D7*Inputs!D58*Inputs!D31", startCol=14, startRow=2)
-  # Fórmula 15: Dimensão 2 - Devices per school 
-  writeData(wb, sheet = "Results", x="dim_2_price_device_school", startCol=15, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D59*Inputs!D29", startCol=15, startRow=2)
-  # Fórmula 16: Dimensão 2 - Charging cart (Min Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_min", startCol=16, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D52)+(Inputs!D6*Inputs!D53))/30*Inputs!D28", startCol=16, startRow=2)
-  # Fórmula 17: Dimensão 2 - Charging cart (Mild Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_mild", startCol=17, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D54)+(Inputs!D6*Inputs!D55))/30*Inputs!D28", startCol=17, startRow=2)
-  # Fórmula 18: Dimensão 2 - Charging cart (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_comprehensive", startCol=18, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D56)+(Inputs!D6*Inputs!D57))/30*Inputs!D28", startCol=18, startRow=2)
-  # Fórmula 19: Dimensão 2 - Multimedia projector
-  writeData(wb, sheet = "Results", x="dim_2_price_multimedia_projector", startCol=19, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D60*Inputs!D26", startCol=19, startRow=2)
-  # Fórmula 20: Dimensão 2 - Headphones (Min Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_headphones_min_scenario", startCol=20, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D52)+(Inputs!D6*Inputs!D53))*Inputs!D27", startCol=20, startRow=2)
-  # Fórmula 21: Dimensão 2 - Headphones (Mild Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_headphones_mild_scenario", startCol=21, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D54)+(Inputs!D6*Inputs!D55))*Inputs!D27", startCol=21, startRow=2)
-  # Fórmula 22: Dimensão 2 - Headphones (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="dim_2_price_headphones_comprehensive", startCol=22, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*Inputs!D56)+(Inputs!D6*Inputs!D57))*Inputs!D27", startCol=22, startRow=2)
+  dim_1_price_fiber_exp <- "itu_pop_between_25_50*number_of_schools*parameter_fiber_exp*reference_fiber_exp_price"
+  dim_1_price_fiber_exp <- str_replace_all(dim_1_price_fiber_exp, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_fiber_exp), startCol=2, startRow=3)
   
-  # Fórmula 23: Dimensão 3 - Diagnostic Tool
-  writeData(wb, sheet = "Results", x="dim_3_price_diagnostic_tool", startCol=23, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D38", startCol=23, startRow=2)
-  # Fórmula 24: Dimensão 3 - LMS Platform
-  writeData(wb, sheet = "Results", x="dim_3_price_lms_platform", startCol=24, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D39", startCol=24, startRow=2)
+  # Dimensão 1 - Satellite service
+  writeData(wb, sheet = "Results", x="dim_1_price_satellite_service", startCol=1, startRow=4)
   
-  # Fórmula 25: Dimensão 3 - Content Production (Scenario online-60)
-  writeData(wb, sheet = "Results", x="dim_3_price_content_production_scenario_online60", startCol=25, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D40", startCol=25, startRow=2)
-  # Fórmula 26: Dimensão 3 - Specialist Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_online60", startCol=26, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D42*(Inputs!D37/Inputs!D61)", startCol=26, startRow=2)
-  # Fórmula 27: Dimensão 3 - Course for Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_online60", startCol=27, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D42*1.5*(Inputs!D37/Inputs!D61)/Inputs!D61", startCol=27, startRow=2)
-  # Fórmula 28: Dimensão 3 - Training design (Scenario online-60)
-  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_online60", startCol=28, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D41", startCol=28, startRow=2)
+  dim_1_price_satellite_service <- "itu_pop_above_50*number_of_schools*reference_satellite_link_price*type_opex"
+  dim_1_price_satellite_service <- str_replace_all(dim_1_price_satellite_service, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_satellite_service), startCol=2, startRow=4)
   
-  # Fórmula 29: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_content_production_scenario_online40", startCol=29, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D40*Inputs!D44", startCol=29, startRow=2)
-  # Fórmula 30: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_online40", startCol=30, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D42*(Inputs!D37/Inputs!D61))*Inputs!D44", startCol=30, startRow=2)
-  # Fórmula 31: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_online40", startCol=31, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D42*1.5*(Inputs!D37/Inputs!D61)/Inputs!D61)*Inputs!D44", startCol=31, startRow=2)
-  # Fórmula 32: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_online40", startCol=32, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D41*Inputs!D44", startCol=32, startRow=2)
+  # Dimensão 1 - Fiber link
+  writeData(wb, sheet = "Results", x="dim_1_price_fiber_link", startCol=1, startRow=5)
   
-  # Fórmula 33: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_content_production_scenario_inperson40", startCol=33, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D40*Inputs!D44", startCol=33, startRow=2)
-  # Fórmula 34: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_inperson40", startCol=34, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D42*(Inputs!D37/Inputs!D61))*Inputs!D43*Inputs!D44", startCol=34, startRow=2)
-  # Fórmula 35: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_inperson40", startCol=35, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D42*1.5*(Inputs!D37/Inputs!D61)/Inputs!D61)*Inputs!D43*Inputs!D44", startCol=35, startRow=2)
-  # Fórmula 36: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_inperson40", startCol=36, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D41*Inputs!D44", startCol=36, startRow=2)
+  dim_1_price_fiber_link <- "itu_pop_below_50*number_of_schools*(avg_student_per_school)*(reference_fiber_link_price/200)*type_opex"
+  dim_1_price_fiber_link <- str_replace_all(dim_1_price_fiber_link, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_fiber_link), startCol=2, startRow=5)
   
-  # Fórmula 37: Dimensão 4 - Teaching and learning platform
-  writeData(wb, sheet = "Results", x="dim_4_price_teaching_learning_platform", startCol=37, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6+Inputs!D5)*Inputs!D33*Inputs!D62*(Inputs!D45/12)", startCol=37, startRow=2)
-  # Fórmula 38: Dimensão 4 - Management platform
-  writeData(wb, sheet = "Results", x="dim_4_price_management_platform", startCol=38, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D34*Inputs!D63*(Inputs!D45/12)", startCol=38, startRow=2)
+  # Dimensão 1 - Access point
+  writeData(wb, sheet = "Results", x="dim_1_price_access_point", startCol=1, startRow=6)
   
-  # Fórmula 39: Dimensão 5 - Central team
-  writeData(wb, sheet = "Results", x="dim_5_price_central_team", startCol=39, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D35*((Inputs!D64+Inputs!D65)/2)*Inputs!D45", startCol=39, startRow=2)
-  # Fórmula 40: Dimensão 5 - Regional team
-  writeData(wb, sheet = "Results", x="dim_5_price_regional_team", startCol=40, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D66*Inputs!D2*Inputs!D36*Inputs!D45", startCol=40, startRow=2)
-  # Fórmula 41: Dimensão 5 - Local team
-  writeData(wb, sheet = "Results", x="dim_5_price_local_team", startCol=41, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D67*(Inputs!D2-Inputs!D3)+(Inputs!D68*Inputs!D3))*Inputs!D36*Inputs!D45", startCol=41, startRow=2)
+  dim_1_price_access_point <- "(((number_of_students_primary/25)+primary_schools_cima*3)+((number_of_students_secondary/35)+secondary_schools_cima*3))*parameter_access_point*reference_access_point_price"
+  dim_1_price_access_point <- str_replace_all(dim_1_price_access_point, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_access_point), startCol=2, startRow=6)
+  
+  # Dimensão 1 - Firewall
+  writeData(wb, sheet = "Results", x="dim_1_price_firewall", startCol=1, startRow=7)
+  
+  dim_1_price_firewall <- "number_of_schools*parameter_firewall*reference_firewall_price"
+  dim_1_price_firewall <- str_replace_all(dim_1_price_firewall, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_firewall), startCol=2, startRow=7)
+  
+  # Dimensão 1 - Nobreak
+  writeData(wb, sheet = "Results", x="dim_1_price_nobreak", startCol=1, startRow=8)
+  
+  dim_1_price_nobreak <- "number_of_schools*parameter_nobreak*reference_nobreak_price"
+  dim_1_price_nobreak <- str_replace_all(dim_1_price_nobreak, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_nobreak), startCol=2, startRow=8)
+  
+  # Dimensão 1 - Switch
+  writeData(wb, sheet = "Results", x="dim_1_price_switch", startCol=1, startRow=9)
+  
+  dim_1_price_switch <- "number_of_schools*parameter_switch*reference_switch_price"
+  dim_1_price_switch <- str_replace_all(dim_1_price_switch, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_switch), startCol=2, startRow=9)
+  
+  # Dimensão 1 - Rack 6U/8U
+  writeData(wb, sheet = "Results", x="dim_1_price_rack", startCol=1, startRow=10)
+  
+  dim_1_price_rack <- "number_of_schools*parameter_rack*reference_rack_price"
+  dim_1_price_rack <- str_replace_all(dim_1_price_rack, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_1_price_rack), startCol=2, startRow=10)
+  
+  # Dimensão 2 - Device per students (Min Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_device_student_min", startCol=1, startRow=11)
+  
+  dim_2_price_device_student_min <- "(number_of_students_primary*parameter_min_scenario_primary*reference_tablet_price)+(number_of_students_secondary*parameter_min_scenario_secondary*reference_cloudbook_price)"
+  dim_2_price_device_student_min <- str_replace_all(dim_2_price_device_student_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_device_student_min), startCol=2, startRow=11)
+  
+  # Dimensão 2 - Device per students (Mild Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_device_student_mild", startCol=1, startRow=12)
+  
+  dim_2_price_device_student_mild <- "(number_of_students_primary*parameter_mild_scenario_primary*reference_tablet_price)+(number_of_students_secondary*parameter_mild_scenario_secondary*reference_cloudbook_price)"
+  dim_2_price_device_student_mild <- str_replace_all(dim_2_price_device_student_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_device_student_mild), startCol=2, startRow=12)
+  
+  # Dimensão 2 - Device per students (Comprehensive Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_device_student_comprehensive", startCol=1, startRow=13)
+  
+  dim_2_price_device_student_comprehensive <- "(number_of_students_primary*parameter_comprehensive_primary*reference_tablet_price)+(number_of_students_secondary*parameter_comprehensive_secondary*reference_cloudbook_price)"
+  dim_2_price_device_student_comprehensive <- str_replace_all(dim_2_price_device_student_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_device_student_comprehensive), startCol=2, startRow=13)
+  
+  # Dimensão 2 - Devices per teacher 
+  writeData(wb, sheet = "Results", x="dim_2_price_device_teacher", startCol=1, startRow=14)
+  
+  dim_2_price_device_teacher <- "number_of_teachers*parameter_device_per_teacher*reference_laptop_price"
+  dim_2_price_device_teacher <- str_replace_all(dim_2_price_device_teacher, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_device_teacher), startCol=2, startRow=14)
+
+  # Dimensão 2 - Devices per school 
+  writeData(wb, sheet = "Results", x="dim_2_price_device_school", startCol=1, startRow=15)
+  
+  dim_2_price_device_school <- "number_of_schools*parameter_device_per_school*reference_desktop_price"
+  dim_2_price_device_school <- str_replace_all(dim_2_price_device_school, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_device_school), startCol=2, startRow=15)
+  
+  # Dimensão 2 - Charging cart (Min Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_min", startCol=1, startRow=16)
+  
+  dim_2_price_charging_cart_min <- "((number_of_students_primary*parameter_min_scenario_primary)+(number_of_students_secondary*parameter_min_scenario_secondary))/30*reference_charging_cart_price"
+  dim_2_price_charging_cart_min <- str_replace_all(dim_2_price_charging_cart_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_charging_cart_min), startCol=2, startRow=16)
+  
+  # Dimensão 2 - Charging cart (Mild Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_mild", startCol=1, startRow=17)
+  
+  dim_2_price_charging_cart_mild <- "((number_of_students_primary*parameter_mild_scenario_primary)+(number_of_students_secondary*parameter_mild_scenario_secondary))/30*reference_charging_cart_price"
+  dim_2_price_charging_cart_mild <- str_replace_all(dim_2_price_charging_cart_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_charging_cart_mild), startCol=2, startRow=17)
+  
+  # Dimensão 2 - Charging cart (Comprehensive Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_charging_cart_comprehensive", startCol=1, startRow=18)
+  
+  dim_2_price_charging_cart_comprehensive <- "((number_of_students_primary*parameter_comprehensive_primary)+(number_of_students_secondary*parameter_comprehensive_secondary))/30*reference_charging_cart_price"
+  dim_2_price_charging_cart_comprehensive <- str_replace_all(dim_2_price_charging_cart_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_charging_cart_comprehensive), startCol=2, startRow=18)
+  
+  # Dimensão 2 - Multimedia projector
+  writeData(wb, sheet = "Results", x="dim_2_price_multimedia_projector", startCol=1, startRow=19)
+  
+  dim_2_price_multimedia_projector <- "number_of_schools*parameter_multimedia_projector*reference_multimedia_projector_price"
+  dim_2_price_multimedia_projector <- str_replace_all(dim_2_price_multimedia_projector, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_multimedia_projector), startCol=2, startRow=19)
+  
+  # Dimensão 2 - Headphones (Min Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_headphones_min_scenario", startCol=1, startRow=20)
+  
+  dim_2_price_headphones_min_scenario <- "((number_of_students_primary*parameter_min_scenario_primary)+(number_of_students_secondary*parameter_min_scenario_secondary))*reference_headphone_price"
+  dim_2_price_headphones_min_scenario <- str_replace_all(dim_2_price_headphones_min_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_headphones_min_scenario), startCol=2, startRow=20)
+  
+  # Dimensão 2 - Headphones (Mild Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_headphones_mild_scenario", startCol=1, startRow=21)
+  
+  dim_2_price_headphones_mild_scenario <- "((number_of_students_primary*parameter_mild_scenario_primary)+(number_of_students_secondary*parameter_mild_scenario_secondary))*reference_headphone_price"
+  dim_2_price_headphones_mild_scenario <- str_replace_all(dim_2_price_headphones_mild_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_headphones_mild_scenario), startCol=2, startRow=21)
+  
+  # Dimensão 2 - Headphones (Comprehensive Scenario)
+  writeData(wb, sheet = "Results", x="dim_2_price_headphones_comprehensive", startCol=1, startRow=22)
+  
+  dim_2_price_headphones_comprehensive <- "((number_of_students_primary*parameter_comprehensive_primary)+(number_of_students_secondary*parameter_comprehensive_secondary))*reference_headphone_price"
+  dim_2_price_headphones_comprehensive <- str_replace_all(dim_2_price_headphones_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_2_price_headphones_comprehensive), startCol=2, startRow=22)
+  
+  # Dimensão 3 - Diagnostic Tool
+  writeData(wb, sheet = "Results", x="dim_3_price_diagnostic_tool", startCol=1, startRow=23)
+  
+  dim_3_price_diagnostic_tool <- "reference_price_diagnostic_tool"
+  dim_3_price_diagnostic_tool <- str_replace_all(dim_3_price_diagnostic_tool, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_diagnostic_tool), startCol=2, startRow=23)
+  
+  # Dimensão 3 - LMS Platform
+  writeData(wb, sheet = "Results", x="dim_3_price_lms_platform", startCol=1, startRow=24)
+  
+  dim_3_price_lms_platform <- "reference_price_lms"
+  dim_3_price_lms_platform <- str_replace_all(dim_3_price_lms_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_lms_platform), startCol=2, startRow=24)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-60)
+  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_online60", startCol=1, startRow=25)
+  
+  dim_3_price_specialist_trainers_scenario_online60 <- "reference_price_trainers60*(number_of_graduated_teacher/parameter_teacher_class)"
+  dim_3_price_specialist_trainers_scenario_online60 <- str_replace_all(dim_3_price_specialist_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_specialist_trainers_scenario_online60), startCol=2, startRow=25)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-60)
+  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_online60", startCol=1, startRow=26)
+  
+  dim_3_price_course_for_trainers_scenario_online60 <- "reference_price_trainers60*1.5*(number_of_graduated_teacher/parameter_teacher_class)/parameter_teacher_class"
+  dim_3_price_course_for_trainers_scenario_online60 <- str_replace_all(dim_3_price_course_for_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_course_for_trainers_scenario_online60), startCol=2, startRow=26)
+  
+  # Dimensão 3 - Training design (Scenario online-60)
+  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_online60", startCol=1, startRow=27)
+  
+  dim_3_price_training_design_scenario_online60 <- "reference_price_training_design"
+  dim_3_price_training_design_scenario_online60 <- str_replace_all(dim_3_price_training_design_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_training_design_scenario_online60), startCol=2, startRow=27)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-40)
+  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_online40", startCol=1, startRow=28)
+  
+  dim_3_price_specialist_trainers_scenario_online40 <- "(reference_price_trainers60*(number_of_graduated_teacher/parameter_teacher_class))*reference_multiplier40h"
+  dim_3_price_specialist_trainers_scenario_online40 <- str_replace_all(dim_3_price_specialist_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_specialist_trainers_scenario_online40), startCol=2, startRow=28)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-40)
+  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_online40", startCol=1, startRow=29)
+  
+  dim_3_price_course_for_trainers_scenario_online40 <- "(reference_price_trainers60*1.5*(number_of_graduated_teacher/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h"
+  dim_3_price_course_for_trainers_scenario_online40 <- str_replace_all(dim_3_price_course_for_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_course_for_trainers_scenario_online40), startCol=2, startRow=29)
+  
+  # Dimensão 3 - Training design (Scenario online-40)
+  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_online40", startCol=1, startRow=30)
+  
+  dim_3_price_training_design_scenario_online40 <- "reference_price_training_design*reference_multiplier40h"
+  dim_3_price_training_design_scenario_online40 <- str_replace_all(dim_3_price_training_design_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_training_design_scenario_online40), startCol=2, startRow=30)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario in-person)
+  writeData(wb, sheet = "Results", x="dim_3_price_specialist_trainers_scenario_inperson40", startCol=1, startRow=31)
+  
+  dim_3_price_specialist_trainers_scenario_inperson40 <- "(reference_price_trainers60*(number_of_graduated_teacher/parameter_teacher_class))*reference_multiplier40h*reference_multiplier_inperson"
+  dim_3_price_specialist_trainers_scenario_inperson40 <- str_replace_all(dim_3_price_specialist_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_specialist_trainers_scenario_inperson40), startCol=2, startRow=31)
+  
+  # Dimensão 3 - Course for Trainers (Scenario in-person)
+  writeData(wb, sheet = "Results", x="dim_3_price_course_for_trainers_scenario_inperson40", startCol=1, startRow=32)
+  
+  dim_3_price_course_for_trainers_scenario_inperson40 <- "(reference_price_trainers60*1.5*(number_of_graduated_teacher/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h*reference_multiplier_inperson"
+  dim_3_price_course_for_trainers_scenario_inperson40 <- str_replace_all(dim_3_price_course_for_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_course_for_trainers_scenario_inperson40), startCol=2, startRow=32)
+  
+  # Dimensão 3 - Training design (Scenario in-person)
+  writeData(wb, sheet = "Results", x="dim_3_price_training_design_scenario_inperson40", startCol=1, startRow=33)
+  
+  dim_3_price_training_design_scenario_inperson40 <- "(reference_price_training_design*reference_multiplier40h)*reference_multiplier40h*reference_multiplier_inperson"
+  dim_3_price_training_design_scenario_inperson40 <- str_replace_all(dim_3_price_training_design_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_3_price_training_design_scenario_inperson40), startCol=2, startRow=33)
+  
+  # Dimensão 4 - Teaching and learning platform
+  writeData(wb, sheet = "Results", x="dim_4_price_teaching_learning_platform", startCol=1, startRow=34)
+  
+  dim_4_price_teaching_learning_platform <- "(number_of_students_secondary+number_of_students_primary)*reference_price_teaching_learning*parameter_teaching_learning*(type_opex/12)"
+  dim_4_price_teaching_learning_platform <- str_replace_all(dim_4_price_teaching_learning_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_4_price_teaching_learning_platform), startCol=2, startRow=34)
+  
+  # Dimensão 4 - Management platform
+  writeData(wb, sheet = "Results", x="dim_4_price_management_platform", startCol=1, startRow=35)
+  
+  dim_4_price_management_platform <- "number_of_schools*reference_price_management_platform*parameter_management*(type_opex/12)"
+  dim_4_price_management_platform <- str_replace_all(dim_4_price_management_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_4_price_management_platform), startCol=2, startRow=35)
+  
+  # Dimensão 5 - Central team
+  writeData(wb, sheet = "Results", x="dim_5_price_central_team", startCol=1, startRow=36)
+  
+  dim_5_price_central_team <- "reference_consultant_price*((parameter_central_team_min+parameter_central_team_max)/2)*type_opex"
+  dim_5_price_central_team <- str_replace_all(dim_5_price_central_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_5_price_central_team), startCol=2, startRow=36)
+  
+  # Dimensão 5 - Regional team
+  writeData(wb, sheet = "Results", x="dim_5_price_regional_team", startCol=1, startRow=37)
+  
+  dim_5_price_regional_team <- "parameter_regional_team*number_of_schools*reference_teacher_price*type_opex"
+  dim_5_price_regional_team <- str_replace_all(dim_5_price_regional_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_5_price_regional_team), startCol=2, startRow=37)
+  
+  # Dimensão 5 - Local team
+  writeData(wb, sheet = "Results", x="dim_5_price_local_team", startCol=1, startRow=38)
+  
+  dim_5_price_local_team <- "(parameter_local_team_urban*(number_of_schools-number_of_rural_schools)+(parameter_local_team_rural*number_of_rural_schools))*reference_teacher_price*type_opex"
+  dim_5_price_local_team <- str_replace_all(dim_5_price_local_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", dim_5_price_local_team), startCol=2, startRow=38)
+  
+  #---- Results: Cenário 1 ----
+  
+  # Dimensão 1 - Fiber expansion (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_fiber_exp", startCol=1, startRow=39)
+  
+  sce1_sec_dim_1_price_fiber_exp <- "itu_pop_between_25_50*secondary_schools_cima*parameter_fiber_exp*reference_fiber_exp_price"
+  sce1_sec_dim_1_price_fiber_exp <- str_replace_all(sce1_sec_dim_1_price_fiber_exp, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_fiber_exp), startCol=2, startRow=39)
+  
+  # Dimensão 1 - Satellite service (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_satellite_service", startCol=1, startRow=40)
+  
+  sce1_sec_dim_1_price_satellite_service <- "itu_pop_above_50*secondary_schools_cima*reference_satellite_link_price*type_opex"
+  sce1_sec_dim_1_price_satellite_service <- str_replace_all(sce1_sec_dim_1_price_satellite_service, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_satellite_service), startCol=2, startRow=40)
+  
+  # Dimensão 1 - Fiber link (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_fiber_link", startCol=1, startRow=41)
+  
+  sce1_sec_dim_1_price_fiber_link <- "itu_pop_below_50*secondary_schools_cima*avg_student_per_school*(reference_fiber_link_price/200)*type_opex"
+  sce1_sec_dim_1_price_fiber_link <- str_replace_all(sce1_sec_dim_1_price_fiber_link, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_fiber_link), startCol=2, startRow=41)
+  
+  # Dimensão 1 - Access point (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_access_point", startCol=1, startRow=42)
+  
+  sce1_sec_dim_1_price_access_point <- "((number_of_students_secondary/35)+secondary_schools_cima*3)*parameter_access_point*reference_access_point_price"
+  sce1_sec_dim_1_price_access_point <- str_replace_all(sce1_sec_dim_1_price_access_point, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_access_point), startCol=2, startRow=42)
+  
+  # Dimensão 1 - Firewall (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_firewall", startCol=1, startRow=43)
+  
+  sce1_sec_dim_1_price_firewall <- "secondary_schools_cima*parameter_firewall*reference_firewall_price"
+  sce1_sec_dim_1_price_firewall <- str_replace_all(sce1_sec_dim_1_price_firewall, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_firewall), startCol=2, startRow=43)
+  
+  # Dimensão 1 - Nobreak (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_nobreak", startCol=1, startRow=44)
+  
+  sce1_sec_dim_1_price_nobreak <- "secondary_schools_cima*parameter_nobreak*reference_nobreak_price"
+  sce1_sec_dim_1_price_nobreak <- str_replace_all(sce1_sec_dim_1_price_nobreak, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_nobreak), startCol=2, startRow=44)
+  
+  # Dimensão 1 - Switch (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_switch", startCol=1, startRow=45)
+  
+  sce1_sec_dim_1_price_switch <- "secondary_schools_cima*parameter_switch*reference_switch_price"
+  sce1_sec_dim_1_price_switch <- str_replace_all(sce1_sec_dim_1_price_switch, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_switch), startCol=2, startRow=45)
+  
+  # Dimensão 1 - Rack 6U/8U (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_rack", startCol=1, startRow=46)
+  
+  sce1_sec_dim_1_price_rack <- "secondary_schools_cima*parameter_rack*reference_rack_price"
+  sce1_sec_dim_1_price_rack <- str_replace_all(sce1_sec_dim_1_price_rack, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_1_price_rack), startCol=2, startRow=46)
+  
+  # Dimensão 2 - Device per students (Min Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_min", startCol=1, startRow=47)
+  
+  sce1_sec_dim_2_price_device_student_min <- "number_of_students_secondary*parameter_min_scenario_secondary*reference_cloudbook_price"
+  sce1_sec_dim_2_price_device_student_min <- str_replace_all(sce1_sec_dim_2_price_device_student_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_device_student_min), startCol=2, startRow=47)
+  
+  # Dimensão 2 - Device per students (Mild Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_mild", startCol=1, startRow=48)
+  
+  sce1_sec_dim_2_price_device_student_mild <- "number_of_students_secondary*parameter_mild_scenario_secondary*reference_cloudbook_price"
+  sce1_sec_dim_2_price_device_student_mild <- str_replace_all(sce1_sec_dim_2_price_device_student_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_device_student_mild), startCol=2, startRow=48)
+  
+  # Dimensão 2 - Device per students (Comprehensive Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_comprehensive", startCol=1, startRow=49)
+  
+  sce1_sec_dim_2_price_device_student_comprehensive <- "number_of_students_secondary*parameter_comprehensive_secondary*reference_cloudbook_price"
+  sce1_sec_dim_2_price_device_student_comprehensive <- str_replace_all(sce1_sec_dim_2_price_device_student_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_device_student_comprehensive), startCol=2, startRow=49)
+  
+  # Dimensão 2 - Devices per teacher (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_teacher", startCol=1, startRow=50)
+  
+  sce1_sec_dim_2_price_device_teacher <- "(number_of_teachers*(number_of_students_secondary/(number_of_students)))*parameter_device_per_teacher*reference_laptop_price"
+  sce1_sec_dim_2_price_device_teacher <- str_replace_all(sce1_sec_dim_2_price_device_teacher, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_device_teacher), startCol=2, startRow=50)
+  
+  # Dimensão 2 - Devices per school (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_school", startCol=1, startRow=51)
+  
+  sce1_sec_dim_2_price_device_school <- "secondary_schools_cima*parameter_device_per_school*reference_desktop_price"
+  sce1_sec_dim_2_price_device_school <- str_replace_all(sce1_sec_dim_2_price_device_school, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_device_school), startCol=2, startRow=51)
+  
+  # Dimensão 2 - Charging cart (Min Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_min", startCol=1, startRow=52)
+  
+  sce1_sec_dim_2_price_charging_cart_min <- "(number_of_students_secondary*parameter_min_scenario_secondary)/30*reference_charging_cart_price"
+  sce1_sec_dim_2_price_charging_cart_min <- str_replace_all(sce1_sec_dim_2_price_charging_cart_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_charging_cart_min), startCol=2, startRow=52)
+  
+  # Dimensão 2 - Charging cart (Mild Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_mild", startCol=1, startRow=53)
+  
+  sce1_sec_dim_2_price_charging_cart_mild <- "(number_of_students_secondary*parameter_mild_scenario_secondary)/30*reference_charging_cart_price"
+  sce1_sec_dim_2_price_charging_cart_mild <- str_replace_all(sce1_sec_dim_2_price_charging_cart_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_charging_cart_mild), startCol=2, startRow=53)
+
+  # Dimensão 2 - Charging cart (Comprehensive Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_comprehensive", startCol=1, startRow=54)
+  
+  sce1_sec_dim_2_price_charging_cart_comprehensive <- "(number_of_students_secondary*parameter_comprehensive_secondary)/30*reference_charging_cart_price"
+  sce1_sec_dim_2_price_charging_cart_comprehensive <- str_replace_all(sce1_sec_dim_2_price_charging_cart_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_charging_cart_comprehensive), startCol=2, startRow=54)
+
+  # Dimensão 2 - Multimedia projector (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_multimedia_projector", startCol=1, startRow=55)
+  
+  sce1_sec_dim_2_price_multimedia_projector <- "secondary_schools_cima*parameter_multimedia_projector*reference_multimedia_projector_price"
+  sce1_sec_dim_2_price_multimedia_projector <- str_replace_all(sce1_sec_dim_2_price_multimedia_projector, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_multimedia_projector), startCol=2, startRow=55)
+
+  # Dimensão 2 - Headphones (Min Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_min_scenario", startCol=1, startRow=56)
+  
+  sce1_sec_dim_2_price_headphones_min_scenario <- "(number_of_students_secondary*parameter_min_scenario_secondary)*reference_headphone_price"
+  sce1_sec_dim_2_price_headphones_min_scenario <- str_replace_all(sce1_sec_dim_2_price_headphones_min_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_headphones_min_scenario), startCol=2, startRow=56)
+
+  # Dimensão 2 - Headphones (Mild Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_mild_scenario", startCol=1, startRow=57)
+  
+  sce1_sec_dim_2_price_headphones_mild_scenario <- "(number_of_students_secondary*parameter_mild_scenario_secondary)*reference_headphone_price"
+  sce1_sec_dim_2_price_headphones_mild_scenario <- str_replace_all(sce1_sec_dim_2_price_headphones_mild_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_headphones_mild_scenario), startCol=2, startRow=57)
+  
+  # Dimensão 2 - Headphones (Comprehensive Scenario) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_comprehensive", startCol=1, startRow=58)
+  
+  sce1_sec_dim_2_price_headphones_comprehensive <- "(number_of_students_secondary*parameter_comprehensive_secondary)*reference_headphone_price"
+  sce1_sec_dim_2_price_headphones_comprehensive <- str_replace_all(sce1_sec_dim_2_price_headphones_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_2_price_headphones_comprehensive), startCol=2, startRow=58)
+  
+  # Dimensão 3 - Diagnostic Tool (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_diagnostic_tool", startCol=1, startRow=59)
+  
+  sce1_sec_dim_3_price_diagnostic_tool <- "reference_price_diagnostic_tool"
+  sce1_sec_dim_3_price_diagnostic_tool <- str_replace_all(sce1_sec_dim_3_price_diagnostic_tool, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_diagnostic_tool), startCol=2, startRow=59)
+
+  # Dimensão 3 - LMS Platform (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_lms_platform", startCol=1, startRow=60)
+  
+  sce1_sec_dim_3_price_lms_platform <- "reference_price_lms"
+  sce1_sec_dim_3_price_lms_platform <- str_replace_all(sce1_sec_dim_3_price_lms_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_lms_platform), startCol=2, startRow=60)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-60) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_online60", startCol=1, startRow=61)
+  
+  sce1_sec_dim_3_price_specialist_trainers_scenario_online60 <- "reference_price_trainers60*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class)"
+  sce1_sec_dim_3_price_specialist_trainers_scenario_online60 <- str_replace_all(sce1_sec_dim_3_price_specialist_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_specialist_trainers_scenario_online60), startCol=2, startRow=61)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-60) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_online60", startCol=1, startRow=62)
+  
+  sce1_sec_dim_3_price_course_for_trainers_scenario_online60 <- "reference_teacher_price*1.5*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class)/parameter_teacher_class"
+  sce1_sec_dim_3_price_course_for_trainers_scenario_online60 <- str_replace_all(sce1_sec_dim_3_price_course_for_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_course_for_trainers_scenario_online60), startCol=2, startRow=62)
+  
+  # Dimensão 3 - Training design (Scenario online-60) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_online60", startCol=1, startRow=63)
+  
+  sce1_sec_dim_3_price_training_design_scenario_online60 <- "reference_price_training_design"
+  sce1_sec_dim_3_price_training_design_scenario_online60 <- str_replace_all(sce1_sec_dim_3_price_training_design_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_training_design_scenario_online60), startCol=2, startRow=63)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-40) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_online40", startCol=1, startRow=64)
+  
+  sce1_sec_dim_3_price_specialist_trainers_scenario_online40 <- "(reference_price_trainers60*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class))*reference_multiplier40h"
+  sce1_sec_dim_3_price_specialist_trainers_scenario_online40 <- str_replace_all(sce1_sec_dim_3_price_specialist_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_specialist_trainers_scenario_online40), startCol=2, startRow=64)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-40) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_online40", startCol=1, startRow=65)
+  
+  sce1_sec_dim_3_price_course_for_trainers_scenario_online40 <- "(reference_teacher_price*1.5*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h"
+  sce1_sec_dim_3_price_course_for_trainers_scenario_online40 <- str_replace_all(sce1_sec_dim_3_price_course_for_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_course_for_trainers_scenario_online40), startCol=2, startRow=65)
+  
+  # Dimensão 3 - Training design (Scenario online-40) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_online40", startCol=1, startRow=66)
+  
+  sce1_sec_dim_3_price_training_design_scenario_online40 <- "reference_price_training_design*reference_multiplier40h"
+  sce1_sec_dim_3_price_training_design_scenario_online40 <- str_replace_all(sce1_sec_dim_3_price_training_design_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_training_design_scenario_online40), startCol=2, startRow=66)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario in-person) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40", startCol=1, startRow=67)
+  
+  sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40 <- "(reference_price_trainers60*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class))*reference_multiplier40h*reference_multiplier_inperson"
+  sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40 <- str_replace_all(sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40), startCol=2, startRow=67)
+
+  # Dimensão 3 - Course for Trainers (Scenario in-person) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40", startCol=1, startRow=68)
+  
+  sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40 <- "(reference_teacher_price*1.5*((number_of_graduated_teacher*(number_of_students_secondary/(number_of_students)))/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h*reference_multiplier_inperson"
+  sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40 <- str_replace_all(sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40), startCol=2, startRow=68)
+  
+  # Dimensão 3 - Training design (Scenario in-person) (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_inperson40", startCol=1, startRow=69)
+  
+  sce1_sec_dim_3_price_training_design_scenario_inperson40 <- "reference_price_training_design*reference_multiplier40h*reference_multiplier_inperson"
+  sce1_sec_dim_3_price_training_design_scenario_inperson40 <- str_replace_all(sce1_sec_dim_3_price_training_design_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_3_price_training_design_scenario_inperson40), startCol=2, startRow=69)
+  
+  # Dimensão 4 - Teaching and learning platform (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_4_price_teaching_learning_platform", startCol=1, startRow=70)
+  
+  sce1_sec_dim_4_price_teaching_learning_platform <- "number_of_students_secondary*reference_price_teaching_learning*parameter_teaching_learning*(type_opex/12)"
+  sce1_sec_dim_4_price_teaching_learning_platform <- str_replace_all(sce1_sec_dim_4_price_teaching_learning_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_4_price_teaching_learning_platform), startCol=2, startRow=70)
+  
+  # Dimensão 4 - Management platform (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_4_price_management_platform", startCol=1, startRow=71)
+  
+  sce1_sec_dim_4_price_management_platform <- "secondary_schools_cima*reference_price_management_platform*parameter_management*(type_opex/12)"
+  sce1_sec_dim_4_price_management_platform <- str_replace_all(sce1_sec_dim_4_price_management_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_4_price_management_platform), startCol=2, startRow=71)
+  
+  # Dimensão 5 - Central team (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_central_team", startCol=1, startRow=72)
+  
+  sce1_sec_dim_5_price_central_team <- "reference_consultant_price*((parameter_central_team_min+parameter_central_team_max)/2)*type_opex"
+  sce1_sec_dim_5_price_central_team <- str_replace_all(sce1_sec_dim_5_price_central_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_5_price_central_team), startCol=2, startRow=72)
+  
+  # Dimensão 5 - Regional team (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_regional_team", startCol=1, startRow=73)
+  
+  sce1_sec_dim_5_price_regional_team <- "parameter_regional_team*secondary_schools_cima*reference_teacher_price*type_opex"
+  sce1_sec_dim_5_price_regional_team <- str_replace_all(sce1_sec_dim_5_price_regional_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_5_price_regional_team), startCol=2, startRow=73)
+  
+  # Dimensão 5 - Local team (Cenário 1)
+  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_local_team", startCol=1, startRow=74)
+  
+  sce1_sec_dim_5_price_local_team <- "(parameter_local_team_urban*(secondary_schools_cima/number_of_schools)*(number_of_schools-number_of_rural_schools)+(secondary_schools_cima/number_of_schools)*(parameter_local_team_rural*number_of_rural_schools))*reference_teacher_price*type_opex"
+  sce1_sec_dim_5_price_local_team <- str_replace_all(sce1_sec_dim_5_price_local_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce1_sec_dim_5_price_local_team), startCol=2, startRow=74)
+  
+  #---- Results: Cenário 2 ----
+  
+  # Dimensão 1 - Fiber expansion (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_fiber_exp", startCol=1, startRow=75)
+  
+  sce2_rur_dim_1_price_fiber_exp <- "MIN(number_of_rural_schools-MIN(number_of_rural_schools,(itu_pop_above_50*number_of_schools)),itu_pop_between_25_50*number_of_schools)*parameter_fiber_exp*reference_fiber_exp_price"
+  sce2_rur_dim_1_price_fiber_exp <- str_replace_all(sce2_rur_dim_1_price_fiber_exp, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_fiber_exp), startCol=2, startRow=75)
+  
+  # Dimensão 1 - Satellite service (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_satellite_service", startCol=1, startRow=76)
+  
+  sce2_rur_dim_1_price_satellite_service <- "MIN(number_of_rural_schools,itu_pop_above_50*number_of_schools)*reference_satellite_link_price*type_opex"
+  sce2_rur_dim_1_price_satellite_service <- str_replace_all(sce2_rur_dim_1_price_satellite_service, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_satellite_service), startCol=2, startRow=76)
+  
+  # Dimensão 1 - Fiber link (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_fiber_link", startCol=1, startRow=77)
+  
+  sce2_rur_dim_1_price_fiber_link <- "(number_of_rural_schools-MIN(number_of_rural_schools,itu_pop_above_50))*(avg_student_per_school)*(reference_fiber_link_price/200)*type_opex"
+  sce2_rur_dim_1_price_fiber_link <- str_replace_all(sce2_rur_dim_1_price_fiber_link, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_fiber_link), startCol=2, startRow=77)
+  
+  # Dimensão 1 - Access point (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_access_point", startCol=1, startRow=78)
+  
+  sce2_rur_dim_1_price_access_point <- "((number_of_students_primary/25)+primary_schools_cima*3)+((number_of_students_secondary/35)+secondary_schools_cima*3)*(number_of_rural_schools/number_of_schools)*parameter_access_point*reference_access_point_price"
+  sce2_rur_dim_1_price_access_point <- str_replace_all(sce2_rur_dim_1_price_access_point, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_access_point), startCol=2, startRow=78)
+  
+  # Dimensão 1 - Firewall (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_firewall", startCol=1, startRow=79)
+  
+  sce2_rur_dim_1_price_firewall <- "number_of_rural_schools*parameter_firewall*reference_firewall_price"
+  sce2_rur_dim_1_price_firewall <- str_replace_all(sce2_rur_dim_1_price_firewall, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_firewall), startCol=2, startRow=79)
+  
+  # Dimensão 1 - Nobreak (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_nobreak", startCol=1, startRow=80)
+  
+  sce2_rur_dim_1_price_nobreak <- "number_of_rural_schools*parameter_nobreak*reference_nobreak_price"
+  sce2_rur_dim_1_price_nobreak <- str_replace_all(sce2_rur_dim_1_price_nobreak, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_nobreak), startCol=2, startRow=80)
+  
+  # Dimensão 1 - Switch (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_switch", startCol=1, startRow=81)
+  
+  sce2_rur_dim_1_price_switch <- "number_of_rural_schools*parameter_switch*reference_switch_price"
+  sce2_rur_dim_1_price_switch <- str_replace_all(sce2_rur_dim_1_price_switch, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_switch), startCol=2, startRow=81)
+  
+  # Dimensão 1 - Rack 6U/8U (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_rack", startCol=1, startRow=82)
+  
+  sce2_rur_dim_1_price_rack <- "number_of_rural_schools*parameter_rack*reference_rack_price"
+  sce2_rur_dim_1_price_rack <- str_replace_all(sce2_rur_dim_1_price_rack, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_1_price_rack), startCol=2, startRow=82)
+  
+  # Dimensão 2 - Device per students (Min Scenario) (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_min", startCol=1, startRow=83)
+  
+  sce2_rur_dim_2_price_device_student_min <- "((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_primary*reference_tablet_price)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_secondary*reference_cloudbook_price)"
+  sce2_rur_dim_2_price_device_student_min <- str_replace_all(sce2_rur_dim_2_price_device_student_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_device_student_min), startCol=2, startRow=83)
+  
+  # Dimensão 2 - Device per students (Mild Scenario) (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_mild", startCol=1, startRow=84)
+  
+  sce2_rur_dim_2_price_device_student_mild <- "((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_primary*reference_tablet_price)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_secondary*reference_cloudbook_price)"
+  sce2_rur_dim_2_price_device_student_mild <- str_replace_all(sce2_rur_dim_2_price_device_student_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_device_student_mild), startCol=2, startRow=84)
+  
+  # Dimensão 2 - Device per students (Comprehensive Scenario) (Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_comprehensive", startCol=1, startRow=85)
+  
+  sce2_rur_dim_2_price_device_student_comprehensive <- "((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_primary*reference_tablet_price)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_secondary*reference_cloudbook_price)"
+  sce2_rur_dim_2_price_device_student_comprehensive <- str_replace_all(sce2_rur_dim_2_price_device_student_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_device_student_comprehensive), startCol=2, startRow=85)
+  
+  # Dimensão 2 - Devices per teacher(Cenário 2)
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_teacher", startCol=1, startRow=86)
+  
+  sce2_rur_dim_2_price_device_teacher <- "(number_of_teachers*(number_of_rural_schools/number_of_schools))*parameter_device_per_teacher*reference_laptop_price"
+  sce2_rur_dim_2_price_device_teacher <- str_replace_all(sce2_rur_dim_2_price_device_teacher, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_device_teacher), startCol=2, startRow=86)
+  
+  # Dimensão 2 - Devices per school (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_school", startCol=1, startRow=87)
+  
+  sce2_rur_dim_2_price_device_school <- "number_of_rural_schools*parameter_device_per_school*reference_desktop_price"
+  sce2_rur_dim_2_price_device_school <- str_replace_all(sce2_rur_dim_2_price_device_school, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_device_school), startCol=2, startRow=87)
+  
+  # Dimensão 2 - Charging cart (Min Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_min", startCol=1, startRow=88)
+  
+  sce2_rur_dim_2_price_charging_cart_min <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_secondary))/30*reference_charging_cart_price"
+  sce2_rur_dim_2_price_charging_cart_min <- str_replace_all(sce2_rur_dim_2_price_charging_cart_min, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_charging_cart_min), startCol=2, startRow=88)
+  
+  # Dimensão 2 - Charging cart (Mild Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_mild", startCol=1, startRow=89)
+  
+  sce2_rur_dim_2_price_charging_cart_mild <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_secondary))/30*reference_charging_cart_price"
+  sce2_rur_dim_2_price_charging_cart_mild <- str_replace_all(sce2_rur_dim_2_price_charging_cart_mild, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_charging_cart_mild), startCol=2, startRow=89)
+  
+  # Dimensão 2 - Charging cart (Comprehensive Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_comprehensive", startCol=1, startRow=90)
+  
+  sce2_rur_dim_2_price_charging_cart_comprehensive <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_secondary))/30*reference_charging_cart_price"
+  sce2_rur_dim_2_price_charging_cart_comprehensive <- str_replace_all(sce2_rur_dim_2_price_charging_cart_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_charging_cart_comprehensive), startCol=2, startRow=90)
+  
+  # Dimensão 2 - Multimedia projector (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_multimedia_projector", startCol=1, startRow=91)
+  
+  sce2_rur_dim_2_price_multimedia_projector <- "number_of_rural_schools*parameter_multimedia_projector*reference_multimedia_projector_price"
+  sce2_rur_dim_2_price_multimedia_projector <- str_replace_all(sce2_rur_dim_2_price_multimedia_projector, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_multimedia_projector), startCol=2, startRow=91)
+  
+  # Dimensão 2 - Headphones (Min Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_min_scenario", startCol=1, startRow=92)
+  
+  sce2_rur_dim_2_price_headphones_min_scenario <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_min_scenario_secondary))*reference_headphone_price"
+  sce2_rur_dim_2_price_headphones_min_scenario <- str_replace_all(sce2_rur_dim_2_price_headphones_min_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_headphones_min_scenario), startCol=2, startRow=92)
+  
+  # Dimensão 2 - Headphones (Mild Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_mild_scenario", startCol=1, startRow=93)
+  
+  sce2_rur_dim_2_price_headphones_mild_scenario <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_mild_scenario_secondary))*reference_headphone_price"
+  sce2_rur_dim_2_price_headphones_mild_scenario <- str_replace_all(sce2_rur_dim_2_price_headphones_mild_scenario, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_headphones_mild_scenario), startCol=2, startRow=93)
+  
+  # Dimensão 2 - Headphones (Comprehensive Scenario) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_comprehensive", startCol=1, startRow=94)
+  
+  sce2_rur_dim_2_price_headphones_comprehensive <- "(((number_of_students_primary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_primary)+((number_of_students_secondary*(number_of_rural_schools/number_of_schools))*parameter_comprehensive_secondary))*reference_headphone_price"
+  sce2_rur_dim_2_price_headphones_comprehensive <- str_replace_all(sce2_rur_dim_2_price_headphones_comprehensive, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_2_price_headphones_comprehensive), startCol=2, startRow=94)
+  
+  # Dimensão 3 - Diagnostic Tool (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_diagnostic_tool", startCol=1, startRow=95)
+  
+  sce2_rur_dim_3_price_diagnostic_tool <- "reference_price_diagnostic_tool"
+  sce2_rur_dim_3_price_diagnostic_tool <- str_replace_all(sce2_rur_dim_3_price_diagnostic_tool, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_diagnostic_tool), startCol=2, startRow=95)
+  
+  # Dimensão 3 - LMS Platform (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_lms_platform", startCol=1, startRow=96)
+  
+  sce2_rur_dim_3_price_lms_platform <- "reference_price_lms"
+  sce2_rur_dim_3_price_lms_platform <- str_replace_all(sce2_rur_dim_3_price_lms_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_lms_platform), startCol=2, startRow=96)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-60) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_online60", startCol=1, startRow=97)
+  
+  sce2_rur_dim_3_price_specialist_trainers_scenario_online60 <- "reference_price_trainers60*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class)"
+  sce2_rur_dim_3_price_specialist_trainers_scenario_online60 <- str_replace_all(sce2_rur_dim_3_price_specialist_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_specialist_trainers_scenario_online60), startCol=2, startRow=97)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-60) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_online60", startCol=1, startRow=98)
+  
+  sce2_rur_dim_3_price_course_for_trainers_scenario_online60 <- "reference_price_trainers60*1.5*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class)/parameter_teacher_class"
+  sce2_rur_dim_3_price_course_for_trainers_scenario_online60 <- str_replace_all(sce2_rur_dim_3_price_course_for_trainers_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_course_for_trainers_scenario_online60), startCol=2, startRow=98)
+  
+  # Dimensão 3 - Training design (Scenario online-60) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_online60", startCol=1, startRow=99)
+  
+  sce2_rur_dim_3_price_training_design_scenario_online60 <- "reference_price_training_design"
+  sce2_rur_dim_3_price_training_design_scenario_online60 <- str_replace_all(sce2_rur_dim_3_price_training_design_scenario_online60, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_training_design_scenario_online60), startCol=2, startRow=99)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario online-40) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_online40", startCol=1, startRow=100)
+  
+  sce2_rur_dim_3_price_specialist_trainers_scenario_online40 <- "(reference_price_trainers60*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class))*reference_multiplier40h"
+  sce2_rur_dim_3_price_specialist_trainers_scenario_online40 <- str_replace_all(sce2_rur_dim_3_price_specialist_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_specialist_trainers_scenario_online40), startCol=2, startRow=100)
+  
+  # Dimensão 3 - Course for Trainers (Scenario online-40) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_online40", startCol=1, startRow=101)
+  
+  sce2_rur_dim_3_price_course_for_trainers_scenario_online40 <- "(reference_price_trainers60*1.5*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h"
+  sce2_rur_dim_3_price_course_for_trainers_scenario_online40 <- str_replace_all(sce2_rur_dim_3_price_course_for_trainers_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_course_for_trainers_scenario_online40), startCol=2, startRow=101)
+  
+  # Dimensão 3 - Training design (Scenario online-40) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_online40", startCol=1, startRow=102)
+  
+  sce2_rur_dim_3_price_training_design_scenario_online40 <- "reference_price_training_design*reference_multiplier40h"
+  sce2_rur_dim_3_price_training_design_scenario_online40 <- str_replace_all(sce2_rur_dim_3_price_training_design_scenario_online40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_training_design_scenario_online40), startCol=2, startRow=102)
+  
+  # Dimensão 3 - Specialist Trainers (Scenario in-person) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40", startCol=1, startRow=103)
+  
+  sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40 <- "(reference_price_trainers60*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class))*reference_multiplier40h*reference_multiplier_inperson"
+  sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40 <- str_replace_all(sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40), startCol=2, startRow=103)
+  
+  # Dimensão 3 - Course for Trainers (Scenario in-person) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40", startCol=1, startRow=104)
+  
+  sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40 <- "(reference_price_trainers60*1.5*((number_of_graduated_teacher*(number_of_rural_schools/number_of_schools))/parameter_teacher_class)/parameter_teacher_class)*reference_multiplier40h*reference_multiplier_inperson"
+  sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40 <- str_replace_all(sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40), startCol=2, startRow=104)
+  
+  # Dimensão 3 - Training design (Scenario in-person) (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_inperson40", startCol=1, startRow=105)
+  
+  sce2_rur_dim_3_price_training_design_scenario_inperson40 <- "reference_price_training_design*reference_multiplier40h*reference_multiplier_inperson"
+  sce2_rur_dim_3_price_training_design_scenario_inperson40 <- str_replace_all(sce2_rur_dim_3_price_training_design_scenario_inperson40, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_3_price_training_design_scenario_inperson40), startCol=2, startRow=105)
+  
+  # Dimensão 4 - Teaching and learning platform (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_4_price_teaching_learning_platform", startCol=1, startRow=106)
+  
+  sce2_rur_dim_4_price_teaching_learning_platform <- "((number_of_students_secondary+number_of_students_primary)*(number_of_rural_schools/number_of_schools))*reference_price_teaching_learning*parameter_teaching_learning*(type_opex/12)"
+  sce2_rur_dim_4_price_teaching_learning_platform <- str_replace_all(sce2_rur_dim_4_price_teaching_learning_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_4_price_teaching_learning_platform), startCol=2, startRow=106)
+  
+  # Dimensão 4 - Management platform (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_4_price_management_platform", startCol=1, startRow=107)
+  
+  sce2_rur_dim_4_price_management_platform <- "number_of_rural_schools*reference_price_management_platform*parameter_management*(type_opex/12)"
+  sce2_rur_dim_4_price_management_platform <- str_replace_all(sce2_rur_dim_4_price_management_platform, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_4_price_management_platform), startCol=2, startRow=107)
+  
+  # Dimensão 5 - Central team (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_central_team", startCol=1, startRow=108)
+  
+  sce2_rur_dim_5_price_central_team <- "reference_consultant_price*((parameter_central_team_min+parameter_central_team_max)/2)*type_opex"
+  sce2_rur_dim_5_price_central_team <- str_replace_all(sce2_rur_dim_5_price_central_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_5_price_central_team), startCol=2, startRow=108)
+  
+  # Dimensão 5 - Regional team (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_regional_team", startCol=1, startRow=109)
+  
+  sce2_rur_dim_5_price_regional_team <- "parameter_regional_team*number_of_rural_schools*reference_teacher_price*type_opex"
+  sce2_rur_dim_5_price_regional_team <- str_replace_all(sce2_rur_dim_5_price_regional_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_5_price_regional_team), startCol=2, startRow=109)
+  
+  # Dimensão 5 - Local team (Cenário 2) 
+  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_local_team", startCol=1, startRow=110)
+  
+  sce2_rur_dim_5_price_local_team <- "parameter_local_team_rural*number_of_rural_schools*reference_teacher_price*type_opex"
+  sce2_rur_dim_5_price_local_team <- str_replace_all(sce2_rur_dim_5_price_local_team, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce2_rur_dim_5_price_local_team), startCol=2, startRow=110)
+  
+  #---- Results: Cenário 3 ----
+  
+  # Dimensão 2: Apenas equipamentos para professores e escolas (Cenário 3)
+  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_device_teacher", startCol=1, startRow=111)
+  
+  sce3_devt_dim_2_price_device_teacher <- "number_of_teachers*parameter_device_per_teacher*reference_laptop_price"
+  sce3_devt_dim_2_price_device_teacher <- str_replace_all(sce3_devt_dim_2_price_device_teacher, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce3_devt_dim_2_price_device_teacher), startCol=2, startRow=111)
+  
+  # Dimensão 2: Apenas equipamentos para professores e escolas (Cenário 3)
+  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_device_school", startCol=1, startRow=112)
+  
+  sce3_devt_dim_2_price_device_school <- "number_of_schools*parameter_device_per_school*reference_desktop_price"
+  sce3_devt_dim_2_price_device_school <- str_replace_all(sce3_devt_dim_2_price_device_school, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce3_devt_dim_2_price_device_school), startCol=2, startRow=112)
+  
+  # Dimensão 2: Apenas equipamentos para professores e escolas (Cenário 3)
+  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_multimedia_projector", startCol=1, startRow=113)
+  
+  sce3_devt_dim_2_price_multimedia_projector <- "number_of_schools*parameter_multimedia_projector*reference_multimedia_projector_price"
+  sce3_devt_dim_2_price_multimedia_projector <- str_replace_all(sce3_devt_dim_2_price_multimedia_projector, map_df)
+  writeFormula(wb, sheet="Results", x=paste0("=", sce3_devt_dim_2_price_multimedia_projector), startCol=2, startRow=113)
+  
+  
+  #---- Results: Estilo da planilha ----
+  
+  # Estabelece o tamanho da coluna 3, que possui os nomes das variáveis
+  setColWidths(wb, sheet = "Results", cols = 1, widths = 52) 
+  
+  # Estabelece os estilos das colunas da planilha
+  
+  # Inclui bordas  
+  addStyle(wb, sheet="Results", general_style, rows = 1:113, cols = 1)
+  addStyle(wb, sheet="Results", general_style, rows = 1:2, cols = 2)
+  # Ajusta as variáveis numéricas
+  addStyle(wb, sheet="Results", num_style, rows = 3:113, cols = 2)
+  
+  #---- TotalDimension -----
   
   # Adiciona uma planilha ao arquivo criado
   addWorksheet(wb, "TotalDimension")
   
-  # Fórmula 42: Nome do país
-  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!A", 1:2), startCol=1, startRow=1)
-  # Fórmula 43: Nome da subregião
-  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!B", 1:2), startCol=2, startRow=1)
+  # Nome do país
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!A", 1), startCol=1, startRow=1)
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!A", 2), startCol=2, startRow=1)
+  # Nome da subregião
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!B", 1), startCol=1, startRow=2)
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=Inputs!B", 2), startCol=2, startRow=2)
   
-  # Fórmula 44: Total da dimensão 1
-  writeData(wb, sheet = "TotalDimension", x="dim_1_total", startCol=3, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!C2:J2)", startCol=3, startRow=2)
+  #---- TotalDimension: Cenário geral -----
   
-  # Fórmula 45: Total da dimensão 2 (min)
-  writeData(wb, sheet = "TotalDimension", x="dim_2_total_min", startCol=4, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!K2+Results!N2+Results!O2+Results!P2+Results!S2+Results!T2", startCol=4, startRow=2)
-  # Fórmula 46: Total da dimensão 2 (mild)
-  writeData(wb, sheet = "TotalDimension", x="dim_2_total_mild", startCol=5, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!L2+Results!N2+Results!O2+Results!Q2+Results!S2+Results!U2", startCol=5, startRow=2)
-  # Fórmula 47: Total da dimensão 2 (comprehensive)
-  writeData(wb, sheet = "TotalDimension", x="dim_2_total_comprehensive", startCol=6, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!M2+Results!N2+Results!O2+Results!R2+Results!S2+Results!V2", startCol=6, startRow=2)
+  # Total da dimensão 1
+  writeData(wb, sheet = "TotalDimension", x="dim_1_total", startCol=1, startRow=3)
+  dim_1_total <- paste0("(", dim_1_price_fiber_exp, ")", "+", "(", dim_1_price_satellite_service, ")", "+", "(", dim_1_price_fiber_link, ")", "+", "(", dim_1_price_access_point, ")", "+", "(", dim_1_price_firewall, ")", "+", "(", dim_1_price_nobreak, ")", "+", "(", dim_1_price_switch, ")", "+", "(", dim_1_price_rack, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_1_total), startCol=2, startRow=3)
+
+  # Total da dimensão 2 (min)
+  writeData(wb, sheet = "TotalDimension", x="dim_2_total_min", startCol=1, startRow=4)
+  dim_2_total_min <- paste0("(", dim_2_price_device_student_min, ")", "+", "(", dim_2_price_device_teacher, ")", "+", "(", dim_2_price_device_school, ")", "+", "(", dim_2_price_charging_cart_min, ")", "+", "(", dim_2_price_multimedia_projector, ")", "+", "(", dim_2_price_headphones_min_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_2_total_min), startCol=2, startRow=4)
   
-  # Fórmula 48: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="dim_3_total_online_60", startCol=7, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!W2+Results!X2+Results!Y2+Results!Z2+Results!AA2+Results!AB2", startCol=7, startRow=2)
-  # Fórmula 49: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="dim_3_total_online_40", startCol=8, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!W2+Results!X2+Results!AC2+Results!AD2+Results!AE2+Results!AF2", startCol=8, startRow=2)
-  # Fórmula 50: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="dim_3_total_inperson_40", startCol=9, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!W2+Results!X2+Results!AG2+Results!AH2+Results!AI2+Results!AJ2", startCol=9, startRow=2)
+  # Total da dimensão 2 (mild)
+  writeData(wb, sheet = "TotalDimension", x="dim_2_total_mild", startCol=1, startRow=5)
+  dim_2_total_mild <- paste0("(", dim_2_price_device_student_mild, ")", "+", "(", dim_2_price_device_teacher, ")", "+", "(", dim_2_price_device_school, ")", "+", "(", dim_2_price_charging_cart_mild, ")", "+", "(", dim_2_price_multimedia_projector, ")", "+", "(", dim_2_price_headphones_mild_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_2_total_mild), startCol=2, startRow=5)
   
-  # Fórmula 51: Total da dimensão 4
-  writeData(wb, sheet = "TotalDimension", x="dim_4_total", startCol=10, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!AK2:AL2)", startCol=10, startRow=2)
-  # Fórmula 52: Total da dimensão 5
-  writeData(wb, sheet = "TotalDimension", x="dim_5_total", startCol=11, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!AM2:AO2)", startCol=11, startRow=2)
+  # Total da dimensão 2 (comprehensive)
+  writeData(wb, sheet = "TotalDimension", x="dim_2_total_comprehensive", startCol=1, startRow=6)
+  dim_2_total_comprehensive <- paste0("(", dim_2_price_device_student_comprehensive, ")", "+", "(", dim_2_price_device_teacher, ")", "+", "(", dim_2_price_device_school, ")", "+", "(", dim_2_price_charging_cart_comprehensive, ")", "+", "(", dim_2_price_multimedia_projector, ")", "+", "(", dim_2_price_headphones_comprehensive, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_2_total_comprehensive), startCol=2, startRow=6)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="dim_3_total_online_60", startCol=1, startRow=7)
+  dim_3_total_online_60 <- paste0("(", dim_3_price_diagnostic_tool, ")", "+", "(", dim_3_price_lms_platform, ")", "+", "(", dim_3_price_specialist_trainers_scenario_online60, ")", "+", "(", dim_3_price_course_for_trainers_scenario_online60, ")", "+", "(", dim_3_price_training_design_scenario_online60, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_3_total_online_60), startCol=2, startRow=7)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="dim_3_total_online_40", startCol=1, startRow=8)
+  dim_3_total_online_40 <- paste0("(", dim_3_price_diagnostic_tool, ")", "+", "(", dim_3_price_lms_platform, ")", "+", "(", dim_3_price_specialist_trainers_scenario_online40, ")", "+", "(", dim_3_price_course_for_trainers_scenario_online40, ")", "+", "(", dim_3_price_training_design_scenario_online40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_3_total_online_40), startCol=2, startRow=8)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="dim_3_total_inperson_40", startCol=1, startRow=9)
+  dim_3_total_inperson_40 <- paste0("(", dim_3_price_diagnostic_tool, ")", "+", "(", dim_3_price_lms_platform, ")", "+", "(", dim_3_price_specialist_trainers_scenario_inperson40, ")", "+", "(", dim_3_price_course_for_trainers_scenario_inperson40, ")", "+", "(", dim_3_price_training_design_scenario_inperson40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_3_total_inperson_40), startCol=2, startRow=9)
+  
+  # Total da dimensão 4
+  writeData(wb, sheet = "TotalDimension", x="dim_4_total", startCol=1, startRow=10)
+  dim_4_total <- paste0("(", dim_4_price_teaching_learning_platform, ")", "+", "(", dim_4_price_management_platform, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_4_total), startCol=2, startRow=10)
+  
+  # Total da dimensão 5
+  writeData(wb, sheet = "TotalDimension", x="dim_5_total", startCol=1, startRow=11)
+  dim_5_total <- paste0("(", dim_5_price_central_team, ")", "+", "(", dim_5_price_regional_team, ")", "+", "(", dim_5_price_local_team, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", dim_5_total), startCol=2, startRow=11)
+  
+  #---- TotalDimension: Cenário 1 -----
+  
+  # Total da dimensão 1
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_1_total", startCol=1, startRow=12)
+  sce1_sec_dim_1_total <- paste0("(", sce1_sec_dim_1_price_fiber_exp, ")", "+", "(", sce1_sec_dim_1_price_satellite_service, ")", "+", "(", sce1_sec_dim_1_price_fiber_link, ")", "+", "(", sce1_sec_dim_1_price_access_point, ")", "+", "(", sce1_sec_dim_1_price_firewall, ")", "+", "(", sce1_sec_dim_1_price_nobreak, ")", "+", "(", sce1_sec_dim_1_price_switch, ")", "+", "(", sce1_sec_dim_1_price_rack, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_1_total), startCol=2, startRow=12)
+  
+  # Total da dimensão 2 (min)
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_min", startCol=1, startRow=13)
+  sce1_sec_dim_2_total_min <- paste0("(", sce1_sec_dim_2_price_device_student_min, ")", "+", "(", sce1_sec_dim_2_price_device_teacher, ")", "+", "(", sce1_sec_dim_2_price_device_school, ")", "+", "(", sce1_sec_dim_2_price_charging_cart_min, ")", "+", "(", sce1_sec_dim_2_price_multimedia_projector, ")", "+", "(", sce1_sec_dim_2_price_headphones_min_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_2_total_min), startCol=2, startRow=13)
+  
+  # Total da dimensão 2 (mild)
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_mild", startCol=1, startRow=14)
+  sce1_sec_dim_2_total_mild <- paste0("(", sce1_sec_dim_2_price_device_student_mild, ")", "+", "(", sce1_sec_dim_2_price_device_teacher, ")", "+", "(", sce1_sec_dim_2_price_device_school, ")", "+", "(", sce1_sec_dim_2_price_charging_cart_mild, ")", "+", "(", sce1_sec_dim_2_price_multimedia_projector, ")", "+", "(", sce1_sec_dim_2_price_headphones_mild_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_2_total_mild), startCol=2, startRow=14)
+  
+  # Total da dimensão 2 (comprehensive)
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_comprehensive", startCol=1, startRow=15)
+  sce1_sec_dim_2_total_comprehensive <- paste0("(", sce1_sec_dim_2_price_device_student_comprehensive, ")", "+", "(", sce1_sec_dim_2_price_device_teacher, ")", "+", "(", sce1_sec_dim_2_price_device_school, ")", "+", "(", sce1_sec_dim_2_price_charging_cart_comprehensive, ")", "+", "(", sce1_sec_dim_2_price_multimedia_projector, ")", "+", "(", sce1_sec_dim_2_price_headphones_comprehensive, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_2_total_comprehensive), startCol=2, startRow=15)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_online_60", startCol=1, startRow=16)
+  sce1_sec_dim_3_total_online_60 <- paste0("(", sce1_sec_dim_3_price_diagnostic_tool, ")", "+", "(", sce1_sec_dim_3_price_lms_platform, ")", "+", "(", sce1_sec_dim_3_price_specialist_trainers_scenario_online60, ")", "+", "(", sce1_sec_dim_3_price_course_for_trainers_scenario_online60, ")", "+", "(", sce1_sec_dim_3_price_training_design_scenario_online60, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_3_total_online_60), startCol=2, startRow=16)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_online_40", startCol=1, startRow=17)
+  sce1_sec_dim_3_total_online_40 <- paste0("(", sce1_sec_dim_3_price_diagnostic_tool, ")", "+", "(", sce1_sec_dim_3_price_lms_platform, ")", "+", "(", sce1_sec_dim_3_price_specialist_trainers_scenario_online40, ")", "+", "(", sce1_sec_dim_3_price_course_for_trainers_scenario_online40, ")", "+", "(", sce1_sec_dim_3_price_training_design_scenario_online40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_3_total_online_40), startCol=2, startRow=17)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_inperson_40", startCol=1, startRow=18)
+  sce1_sec_dim_3_total_inperson_40 <- paste0("(", sce1_sec_dim_3_price_diagnostic_tool, ")", "+", "(", sce1_sec_dim_3_price_lms_platform, ")", "+", "(", sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40, ")", "+", "(", sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40, ")", "+", "(", sce1_sec_dim_3_price_training_design_scenario_inperson40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_3_total_inperson_40), startCol=2, startRow=18)
+  
+  # Total da dimensão 4
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_4_total", startCol=1, startRow=19)
+  sce1_sec_dim_4_total <- paste0("(", sce1_sec_dim_4_price_teaching_learning_platform, ")", "+", "(", sce1_sec_dim_4_price_management_platform, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_4_total), startCol=2, startRow=19)
+  
+  # Total da dimensão 5
+  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_5_total", startCol=1, startRow=20)
+  sce1_sec_dim_5_total <- paste0("(", sce1_sec_dim_5_price_central_team, ")", "+", "(", sce1_sec_dim_5_price_regional_team, ")", "+", "(", sce1_sec_dim_5_price_local_team, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce1_sec_dim_5_total), startCol=2, startRow=20)
+  
+  #---- TotalDimension: Cenário 2 -----
+  
+  # Total da dimensão 1
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_1_total", startCol=1, startRow=21)
+  sce2_rur_dim_1_total <- paste0("(", sce2_rur_dim_1_price_fiber_exp, ")", "+", "(", sce2_rur_dim_1_price_satellite_service, ")", "+", "(", sce2_rur_dim_1_price_fiber_link, ")", "+", "(", sce2_rur_dim_1_price_access_point, ")", "+", "(", sce2_rur_dim_1_price_firewall, ")", "+", "(", sce2_rur_dim_1_price_nobreak, ")", "+", "(", sce2_rur_dim_1_price_switch, ")", "+", "(", sce2_rur_dim_1_price_rack, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_1_total), startCol=2, startRow=21)
+  
+  # Total da dimensão 2 (min)
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_min", startCol=1, startRow=22)
+  sce2_rur_dim_2_total_min <- paste0("(", sce2_rur_dim_2_price_device_student_min, ")", "+", "(", sce2_rur_dim_2_price_device_teacher, ")", "+", "(", sce2_rur_dim_2_price_device_school, ")", "+", "(", sce2_rur_dim_2_price_charging_cart_min, ")", "+", "(", sce2_rur_dim_2_price_multimedia_projector, ")", "+", "(", sce2_rur_dim_2_price_headphones_min_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_2_total_min), startCol=2, startRow=22)
+  
+  # Total da dimensão 2 (mild)
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_mild", startCol=1, startRow=23)
+  sce2_rur_dim_2_total_mild <- paste0("(", sce2_rur_dim_2_price_device_student_mild, ")", "+", "(", sce2_rur_dim_2_price_device_teacher, ")", "+", "(", sce2_rur_dim_2_price_device_school, ")", "+", "(", sce2_rur_dim_2_price_charging_cart_mild, ")", "+", "(", sce2_rur_dim_2_price_multimedia_projector, ")", "+", "(", sce2_rur_dim_2_price_headphones_mild_scenario, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_2_total_mild), startCol=2, startRow=23)
+  
+  # Total da dimensão 2 (comprehensive)
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_comprehensive", startCol=1, startRow=24)
+  sce2_rur_dim_2_total_comprehensive <- paste0("(", sce2_rur_dim_2_price_device_student_comprehensive, ")", "+", "(", sce2_rur_dim_2_price_device_teacher, ")", "+", "(", sce2_rur_dim_2_price_device_school, ")", "+", "(", sce2_rur_dim_2_price_charging_cart_comprehensive, ")", "+", "(", sce2_rur_dim_2_price_multimedia_projector, ")", "+", "(", sce2_rur_dim_2_price_headphones_comprehensive, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_2_total_comprehensive), startCol=2, startRow=24)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_online_60", startCol=1, startRow=25)
+  sce2_rur_dim_3_total_online_60 <- paste0("(", sce2_rur_dim_3_price_diagnostic_tool, ")", "+", "(", sce2_rur_dim_3_price_lms_platform, ")", "+", "(", sce2_rur_dim_3_price_specialist_trainers_scenario_online60, ")", "+", "(", sce2_rur_dim_3_price_course_for_trainers_scenario_online60, ")", "+", "(", sce2_rur_dim_3_price_training_design_scenario_online60, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_3_total_online_60), startCol=2, startRow=25)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_online_40", startCol=1, startRow=26)
+  sce2_rur_dim_3_total_online_40 <- paste0("(", sce2_rur_dim_3_price_diagnostic_tool, ")", "+", "(", sce2_rur_dim_3_price_lms_platform, ")", "+", "(", sce2_rur_dim_3_price_specialist_trainers_scenario_online40, ")", "+", "(", sce2_rur_dim_3_price_course_for_trainers_scenario_online40, ")", "+", "(", sce2_rur_dim_3_price_training_design_scenario_online40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_3_total_online_40), startCol=2, startRow=26)
+  
+  # Total da dimensão 3
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_inperson_40", startCol=1, startRow=27)
+  sce2_rur_dim_3_total_inperson_40 <- paste0("(", sce2_rur_dim_3_price_diagnostic_tool, ")", "+", "(", sce2_rur_dim_3_price_lms_platform, ")", "+", "(", sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40, ")", "+", "(", sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40, ")", "+", "(", sce2_rur_dim_3_price_training_design_scenario_inperson40, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_3_total_inperson_40), startCol=2, startRow=27)
+  
+  # Total da dimensão 4
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_4_total", startCol=1, startRow=28)
+  sce2_rur_dim_4_total <- paste0("(", sce2_rur_dim_4_price_teaching_learning_platform, ")", "+", "(", sce2_rur_dim_4_price_management_platform, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_4_total), startCol=2, startRow=28)
+  
+  # Total da dimensão 5
+  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_5_total", startCol=1, startRow=29)
+  sce2_rur_dim_5_total <- paste0("(", sce2_rur_dim_5_price_central_team, ")", "+", "(", sce2_rur_dim_5_price_regional_team, ")", "+", "(", sce2_rur_dim_5_price_local_team, ")")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce2_rur_dim_5_total), startCol=2, startRow=29)
+  
+  #---- TotalDimension: Cenário 3 -----
+  
+  # Total da dimensão 2 (comprehensive)
+  writeData(wb, sheet = "TotalDimension", x="sce3_devt_dim_2_total", startCol=1, startRow=30)
+  sce3_devt_dim_2_total <- paste0("(", sce3_devt_dim_2_price_device_teacher, "+", sce3_devt_dim_2_price_device_school, "+", sce3_devt_dim_2_price_multimedia_projector, ")", "/1000000")
+  writeFormula(wb, sheet="TotalDimension", x=paste0("=", sce3_devt_dim_2_total), startCol=2, startRow=30)
+  
+  #---- TotalDimension: Estilo da planilha ----
+  
+  # Estabelece o tamanho da coluna 3, que possui os nomes das variáveis
+  setColWidths(wb, sheet = "TotalDimension", cols = 1, widths = 30) 
+  
+  # Estabelece os estilos das colunas da planilha
+  
+  # Inclui bordas  
+  addStyle(wb, sheet="TotalDimension", general_style, rows = 1:30, cols = 1)
+  addStyle(wb, sheet="TotalDimension", general_style, rows = 1:2, cols = 2)
+  # Ajusta as variáveis numéricas
+  addStyle(wb, sheet="TotalDimension", num_style, rows = 3:30, cols = 2)
+  
+  #---- Scenarios -----
   
   # Adiciona uma planilha ao arquivo criado
   addWorksheet(wb, "Scenarios")
   
-  # Fórmula 53: Nome do país
-  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!A", 1:2), startCol=1, startRow=1)
-  # Fórmula 54: Nome da subregião
-  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!B", 1:2), startCol=2, startRow=1)
-  
-  # Fórmula 55: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60", startCol=3, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!D2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2", startCol=3, startRow=2)
-  # Fórmula 56: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40", startCol=4, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!D2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2", startCol=4, startRow=2)
-  # Fórmula 57: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40", startCol=5, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!D2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2", startCol=5, startRow=2)
-  # Fórmula 58: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60", startCol=6, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!E2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2", startCol=6, startRow=2)
-  # Fórmula 59: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40", startCol=7, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!E2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2", startCol=7, startRow=2)
-  # Fórmula 60: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40", startCol=8, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!E2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2", startCol=8, startRow=2)
-  # Fórmula 61: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60", startCol=9, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!F2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2", startCol=9, startRow=2)
-  # Fórmula 62: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40", startCol=10, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!F2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2", startCol=10, startRow=2)
-  # Fórmula 63: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40", startCol=11, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!F2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2", startCol=11, startRow=2)
-  
-  # Fórmula 64: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60_menos_25", startCol=12, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=12, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60_mais_25", startCol=13, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=13, startRow=2)
-  
-  # Fórmula 65: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40_menos_25", startCol=14, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=14, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40_mais_25", startCol=15, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=15, startRow=2)
-  
-  # Fórmula 66: Range para Total Geral (Mínimo de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40_menos_25", startCol=16, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=16, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40_mais_25", startCol=17, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!D2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=17, startRow=2)
-  
-  # Fórmula 67: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60_menos_25", startCol=18, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=18, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60_mais_25", startCol=19, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=19, startRow=2)
-  
-  # Fórmula 68: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40_menos_25", startCol=20, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=20, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40_mais_25", startCol=21, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=21, startRow=2)
-  
-  # Fórmula 69: Range para Total Geral (Moderado de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40_menos_25", startCol=22, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=22, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40_mais_25", startCol=23, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!E2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=23, startRow=2)
-  
-  # Fórmula 70: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60_menos_25", startCol=24, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=24, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60_mais_25", startCol=25, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=25, startRow=2)
-  
-  # Fórmula 71: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40_menos_25", startCol=26, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=26, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40_mais_25", startCol=27, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=27, startRow=2)
-  
-  # Fórmula 72: Range para Total Geral (Abrangente de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40_menos_25", startCol=28, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=28, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40_mais_25", startCol=29, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!F2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=29, startRow=2)
-  
-  #---------- CENÁRIO 1 ----------
-  
-  # Fórmula 73: Dimensão 1 - Fiber expansion
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_fiber_exp", startCol=42, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D16*Inputs!D9*Inputs!D46*Inputs!D20", startCol=42, startRow=2)
-  # Fórmula 74: Dimensão 1 - Satellite service
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_satellite_service", startCol=43, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D15*Inputs!D9*Inputs!D18*Inputs!D45", startCol=43, startRow=2)
-  # Fórmula 75: Dimensão 1 - Fiber link
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_fiber_link", startCol=44, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D14*Inputs!D9*Inputs!D12*(Inputs!D19/200)*Inputs!D45", startCol=44, startRow=2)
-  
-  # Fórmula 76: Dimensão 1 - Access point
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_access_point", startCol=45, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D6/35)+Inputs!D9*3)*Inputs!D47*Inputs!D21", startCol=45, startRow=2)
-  
-  
-  # Fórmula 77: Dimensão 1 - Firewall
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_firewall", startCol=46, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D48*Inputs!D22", startCol=46, startRow=2)
-  # Fórmula 78: Dimensão 1 - Nobreak
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_nobreak", startCol=47, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D49*Inputs!D23", startCol=47, startRow=2)
-  # Fórmula 79: Dimensão 1 - Switch
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_switch", startCol=48, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D50*Inputs!D24", startCol=48, startRow=2)
-  # Fórmula 80: Dimensão 1 - Rack 6U/8U
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_1_price_rack", startCol=49, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D51*Inputs!D25", startCol=49, startRow=2)
-  
-  # Fórmula 81: Dimensão 2 - Device per students (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_min", startCol=50, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D6*Inputs!D53*Inputs!D32", startCol=50, startRow=2)
-  # Fórmula 82: Dimensão 2 - Device per students (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_mild", startCol=51, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D6*Inputs!D55*Inputs!D32", startCol=51, startRow=2)
-  # Fórmula 83: Dimensão 2 - Device per students (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_student_comprehensive", startCol=52, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D6*Inputs!D57*Inputs!D32", startCol=52, startRow=2)
-  # Fórmula 84: Dimensão 2 - Devices per teacher 
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_teacher", startCol=53, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D7*(Inputs!D6/(Inputs!D4)))*Inputs!D58*Inputs!D31", startCol=53, startRow=2)
-  # Fórmula 85: Dimensão 2 - Devices per school 
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_device_school", startCol=54, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D59*Inputs!D29", startCol=54, startRow=2)
-  # Fórmula 86: Dimensão 2 - Charging cart (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_min", startCol=55, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D53)/30*Inputs!D28", startCol=55, startRow=2)
-  # Fórmula 87: Dimensão 2 - Charging cart (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_mild", startCol=56, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D55)/30*Inputs!D28", startCol=56, startRow=2)
-  # Fórmula 88: Dimensão 2 - Charging cart (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_charging_cart_comprehensive", startCol=57, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D57)/30*Inputs!D28", startCol=57, startRow=2)
-  # Fórmula 89: Dimensão 2 - Multimedia projector
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_multimedia_projector", startCol=58, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D60*Inputs!D26", startCol=58, startRow=2)
-  # Fórmula 90: Dimensão 2 - Headphones (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_min_scenario", startCol=59, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D53)*Inputs!D27", startCol=59, startRow=2)
-  # Fórmula 91: Dimensão 2 - Headphones (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_mild_scenario", startCol=60, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D55)*Inputs!D27", startCol=60, startRow=2)
-  # Fórmula 92: Dimensão 2 - Headphones (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_2_price_headphones_comprehensive", startCol=61, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D6*Inputs!D57)*Inputs!D27", startCol=61, startRow=2)
-  
-  # Fórmula 93: Dimensão 3 - Diagnostic Tool
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_diagnostic_tool", startCol=62, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D38", startCol=62, startRow=2)
-  # Fórmula 94: Dimensão 3 - LMS Platform
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_lms_platform", startCol=63, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D39", startCol=63, startRow=2)
-  
-  # Fórmula 95: Dimensão 3 - Content Production (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_content_production_scenario_online60", startCol=64, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D40", startCol=64, startRow=2)
-  # Fórmula 96: Dimensão 3 - Specialist Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_online60", startCol=65, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D42*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61)", startCol=65, startRow=2)
-  # Fórmula 97: Dimensão 3 - Course for Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_online60", startCol=66, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D36 *1.5*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61)/Inputs!D61", startCol=66, startRow=2)
-  # Fórmula 98: Dimensão 3 - Training design (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_online60", startCol=67, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D41", startCol=67, startRow=2)
-  
-  # Fórmula 99: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_content_production_scenario_online40", startCol=68, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D40)", startCol=68, startRow=2)
-  # Fórmula 100: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_online40", startCol=69, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D42*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61))", startCol=69, startRow=2)
-  # Fórmula 101: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_online40", startCol=70, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D36 *1.5*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61)/Inputs!D61)", startCol=70, startRow=2)
-  # Fórmula 102: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_online40", startCol=71, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D41)", startCol=71, startRow=2)
-  
-  # Fórmula 103: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_content_production_scenario_inperson40", startCol=72, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D40)", startCol=72, startRow=2)
-  # Fórmula 104: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_specialist_trainers_scenario_inperson40", startCol=73, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D43*Inputs!D44*(Inputs!D42*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61))", startCol=73, startRow=2)
-  # Fórmula 105: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_course_for_trainers_scenario_inperson40", startCol=74, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D43*Inputs!D44*(Inputs!D36 *1.5*((Inputs!D37*(Inputs!D6/(Inputs!D4)))/Inputs!D61)/Inputs!D61)", startCol=74, startRow=2)
-  # Fórmula 106: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_3_price_training_design_scenario_inperson40", startCol=75, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D41)", startCol=75, startRow=2)
-  
-  # Fórmula 107: Dimensão 4 - Teaching and learning platform
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_4_price_teaching_learning_platform", startCol=76, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D6*Inputs!D33*Inputs!D62*(Inputs!D45/12)", startCol=76, startRow=2)
-  # Fórmula 108: Dimensão 4 - Management platform
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_4_price_management_platform", startCol=77, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D9*Inputs!D34*Inputs!D63*(Inputs!D45/12)", startCol=77, startRow=2)
-  
-  # Fórmula 109: Dimensão 5 - Central team
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_central_team", startCol=78, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D35*((Inputs!D64+Inputs!D65)/2)*Inputs!D45", startCol=78, startRow=2)
-  # Fórmula 110: Dimensão 5 - Regional team
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_regional_team", startCol=79, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D66*Inputs!D9*Inputs!D36*Inputs!D45", startCol=79, startRow=2)
-  # Fórmula 111: Dimensão 5 - Local team
-  writeData(wb, sheet = "Results", x="sce1_sec_dim_5_price_local_team", startCol=80, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D67*(Inputs!D9/Inputs!D2)*(Inputs!D2-Inputs!D3)+(Inputs!D9/Inputs!D2)*(Inputs!D68*Inputs!D3))*Inputs!D36*Inputs!D45", startCol=80, startRow=2)
-  
-  # Fórmula 112: Total da dimensão 1
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_1_total", startCol=12, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!AP2:AW2)", startCol=12, startRow=2)
-  
-  # Fórmula 113: Total da dimensão 2 (min)
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_min", startCol=13, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!AX2+Results!BA2+Results!BB2+Results!BC2+Results!BF2+Results!BG2", startCol=13, startRow=2)
-  # Fórmula 114: Total da dimensão 2 (mild)
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_mild", startCol=14, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!AY2+Results!BA2+Results!BB2+Results!BD2+Results!BF2+Results!BH2", startCol=14, startRow=2)
-  # Fórmula 115: Total da dimensão 2 (comprehensive)
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_2_total_comprehensive", startCol=15, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!AZ2+Results!BA2+Results!BB2+Results!BE2+Results!BF2+Results!BI2", startCol=15, startRow=2)
-  
-  # Fórmula 116: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_online_60", startCol=16, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!BJ2+Results!BK2+Results!BL2+Results!BM2+Results!BN2+Results!BO2", startCol=16, startRow=2)
-  # Fórmula 117: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_online_40", startCol=17, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!BJ2+Results!BK2+Results!BP2+Results!BQ2+Results!BR2+Results!BS2", startCol=17, startRow=2)
-  # Fórmula 118: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_3_total_inperson_40", startCol=18, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!BJ2+Results!BK2+Results!BT2+Results!BU2+Results!BV2+Results!BW2", startCol=18, startRow=2)
-  
-  # Fórmula 119: Total da dimensão 4
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_4_total", startCol=19, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!BX2:BY2)", startCol=19, startRow=2)
-  # Fórmula 120: Total da dimensão 5
-  writeData(wb, sheet = "TotalDimension", x="sce1_sec_dim_5_total", startCol=20, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!BZ2:CB2)", startCol=20, startRow=2)
-  
-  # Fórmula 121: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60", startCol=30, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!M2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2", startCol=30, startRow=2)
-  # Fórmula 122: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40", startCol=31, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!M2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2", startCol=31, startRow=2)
-  # Fórmula 123: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40", startCol=32, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!M2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2", startCol=32, startRow=2)
-  # Fórmula 124: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60", startCol=33, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!N2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2", startCol=33, startRow=2)
-  # Fórmula 125: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40", startCol=34, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!N2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2", startCol=34, startRow=2)
-  # Fórmula 126: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40", startCol=35, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!N2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2", startCol=35, startRow=2)
-  # Fórmula 127: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60", startCol=36, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!O2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2", startCol=36, startRow=2)
-  # Fórmula 128: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40", startCol=37, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!O2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2", startCol=37, startRow=2)
-  # Fórmula 129: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40", startCol=38, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!L2+TotalDimension!O2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2", startCol=38, startRow=2)
-  
-  # Fórmula 130: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_online_60", startCol=39, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=39, startRow=2)
-  # Fórmula 131: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_online_40", startCol=40, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=40, startRow=2)
-  # Fórmula 132: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_inperson_40", startCol=41, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=41, startRow=2)
-  
-  # Fórmula 133: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_online_60", startCol=42, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=42, startRow=2)
-  # Fórmula 134: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_online_40", startCol=43, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=43, startRow=2)
-  # Fórmula 135: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_inperson_40", startCol=44, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=44, startRow=2)
-  
-  # Fórmula 136: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_online_60", startCol=45, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=45, startRow=2)
-  # Fórmula 137: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_online_40", startCol=46, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=46, startRow=2)
-  # Fórmula 138: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_inperson_40", startCol=47, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D6", startCol=47, startRow=2)
-  
-  # Fórmula 139: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_online_60", startCol=48, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=48, startRow=2)
-  # Fórmula 140: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_online_40", startCol=49, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=49, startRow=2)
-  # Fórmula 141: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_inperson_40", startCol=50, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=50, startRow=2)
-  
-  # Fórmula 142: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_online_60", startCol=51, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=51, startRow=2)
-  # Fórmula 143: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_online_40", startCol=52, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=52, startRow=2)
-  # Fórmula 144: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_inperson_40", startCol=53, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=53, startRow=2)
-  
-  # Fórmula 145: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_online_60", startCol=54, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=54, startRow=2)
-  # Fórmula 146: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_online_40", startCol=55, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=55, startRow=2)
-  # Fórmula 147: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_inperson_40", startCol=56, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)/Inputs!D9", startCol=56, startRow=2)
-  
-  
-  # Fórmula 148: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60_menos_25", startCol=57, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=57, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60_mais_25", startCol=58, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=58, startRow=2)
-  
-  # Fórmula 149: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40_menos_25", startCol=59, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=59, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40_mais_25", startCol=60, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=60, startRow=2)
-  
-  # Fórmula 150: Range para Total Geral (Mínimo de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40_menos_25", startCol=61, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=61, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40_mais_25", startCol=62, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!M2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=62, startRow=2)
-  
-  # Fórmula 151: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60_menos_25", startCol=63, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=63, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60_mais_25", startCol=64, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=64, startRow=2)
-  
-  # Fórmula 152: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40_menos_25", startCol=65, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=65, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40_mais_25", startCol=66, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=66, startRow=2)
-  
-  # Fórmula 153: Range para Total Geral (Moderado de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40_menos_25", startCol=67, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=67, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40_mais_25", startCol=68, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!N2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=68, startRow=2)
-  
-  # Fórmula 154: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60_menos_25", startCol=69, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=69, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60_mais_25", startCol=70, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!P2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=70, startRow=2)
-  
-  # Fórmula 155: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40_menos_25", startCol=71, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=71, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40_mais_25", startCol=72, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!Q2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=72, startRow=2)
-  
-  # Fórmula 156: Range para Total Geral (Abrangente de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40_menos_25", startCol=73, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*0.75", startCol=73, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40_mais_25", startCol=74, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!L2+TotalDimension!O2+TotalDimension!R2+TotalDimension!S2+TotalDimension!T2)*1.25", startCol=74, startRow=2)
-  
-  #---------- CENÁRIO 2 ----------
-  
-  # Fórmula 157: Dimensão 1 - Fiber expansion
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_fiber_exp", startCol=81, startRow=1)
-  writeFormula(wb, sheet="Results", x="=MIN(Inputs!D3-MIN(Inputs!D3,(Inputs!D15*Inputs!D2)),Inputs!D16*Inputs!D2)*Inputs!D20*Inputs!D46", startCol=81, startRow=2)
-  # Fórmula 158: Dimensão 1 - Satellite service
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_satellite_service", startCol=82, startRow=1)
-  writeFormula(wb, sheet="Results", x="=MIN(Inputs!D3,Inputs!D15*Inputs!D2)*Inputs!D18*Inputs!D45", startCol=82, startRow=2)
-  # Fórmula 159: Dimensão 1 - Fiber link
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_fiber_link", startCol=83, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D3-MIN(Inputs!D3,Inputs!D15))*(Inputs!D12)*(Inputs!D19/200)*Inputs!D45", startCol=83, startRow=2)
-  # Fórmula 160: Dimensão 1 - Access point
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_access_point", startCol=84, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5/25)+Inputs!D8*3)+((Inputs!D6/35)+Inputs!D9*3)*(Inputs!D3/Inputs!D2)*Inputs!D47*Inputs!D21", startCol=84, startRow=2)
-  # Fórmula 161: Dimensão 1 - Firewall
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_firewall", startCol=85, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D48*Inputs!D22", startCol=85, startRow=2)
-  # Fórmula 162: Dimensão 1 - Nobreak
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_nobreak", startCol=86, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D49*Inputs!D23", startCol=86, startRow=2)
-  # Fórmula 163: Dimensão 1 - Switch
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_switch", startCol=87, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D50*Inputs!D24", startCol=87, startRow=2)
-  # Fórmula 164: Dimensão 1 - Rack 6U/8U
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_1_price_rack", startCol=88, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D51*Inputs!D25", startCol=88, startRow=2)
-  
-  # Fórmula 165: Dimensão 2 - Device per students (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_min", startCol=89, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D52*Inputs!D30)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D53*Inputs!D32)", startCol=89, startRow=2)
-  # Fórmula 166: Dimensão 2 - Device per students (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_mild", startCol=90, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D54*Inputs!D30)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D55*Inputs!D32)", startCol=90, startRow=2)
-  # Fórmula 167: Dimensão 2 - Device per students (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_student_comprehensive", startCol=91, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D56*Inputs!D30)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D57*Inputs!D32)", startCol=91, startRow=2)
-  # Fórmula 168: Dimensão 2 - Devices per teacher 
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_teacher", startCol=92, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(Inputs!D7*(Inputs!D3/Inputs!D2))*Inputs!D58*Inputs!D31", startCol=92, startRow=2)
-  # Fórmula 169: Dimensão 2 - Devices per school 
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_device_school", startCol=93, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D59*Inputs!D29", startCol=93, startRow=2)
-  # Fórmula 160: Dimensão 2 - Charging cart (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_min", startCol=94, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D52)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D53))/30*Inputs!D28", startCol=94, startRow=2)
-  # Fórmula 161: Dimensão 2 - Charging cart (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_mild", startCol=95, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D54)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D55))/30*Inputs!D28", startCol=95, startRow=2)
-  # Fórmula 162: Dimensão 2 - Charging cart (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_charging_cart_comprehensive", startCol=96, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D56)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D57))/30*Inputs!D28", startCol=96, startRow=2)
-  
-  # Fórmula 163: Dimensão 2 - Multimedia projector
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_multimedia_projector", startCol=97, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D60*Inputs!D26", startCol=97, startRow=2)
-  # Fórmula 164: Dimensão 2 - Headphones (Min Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_min_scenario", startCol=98, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D52)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D53))*Inputs!D27", startCol=98, startRow=2)
-  # Fórmula 165: Dimensão 2 - Headphones (Mild Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_mild_scenario", startCol=99, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D54)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D55))*Inputs!D27", startCol=99, startRow=2)
-  # Fórmula 166: Dimensão 2 - Headphones (Comprehensive Scenario)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_2_price_headphones_comprehensive", startCol=100, startRow=1)
-  writeFormula(wb, sheet="Results", x="=(((Inputs!D5*(Inputs!D3/Inputs!D2))*Inputs!D56)+((Inputs!D6*(Inputs!D3/Inputs!D2))*Inputs!D57))*Inputs!D27", startCol=100, startRow=2)
-  
-  # Fórmula 167: Dimensão 3 - Diagnostic Tool
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_diagnostic_tool", startCol=101, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D38", startCol=101, startRow=2)
-  # Fórmula 168: Dimensão 3 - LMS Platform
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_lms_platform", startCol=102, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D39", startCol=102, startRow=2)
-  
-  # Fórmula 169: Dimensão 3 - Content Production (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_content_production_scenario_online60", startCol=103, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D40", startCol=103, startRow=2)
-  # Fórmula 170: Dimensão 3 - Specialist Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_online60", startCol=104, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D42*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61)", startCol=104, startRow=2)
-  # Fórmula 171: Dimensão 3 - Course for Trainers (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_online60", startCol=105, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D42*1.5*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61)/Inputs!D61", startCol=105, startRow=2)
-  # Fórmula 172: Dimensão 3 - Training design (Scenario online-60)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_online60", startCol=106, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D41", startCol=106, startRow=2)
-  
-  # Fórmula 173: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_content_production_scenario_online40", startCol=107, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*Inputs!D40", startCol=107, startRow=2)
-  # Fórmula 174: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_online40", startCol=108, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D42*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61))", startCol=108, startRow=2)
-  # Fórmula 175: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_online40", startCol=109, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*(Inputs!D42*1.5*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61)/Inputs!D61)", startCol=109, startRow=2)
-  # Fórmula 176: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_online40", startCol=110, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*Inputs!D41", startCol=110, startRow=2)
-  
-  # Fórmula 177: Dimensão 3 - Content Production (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_content_production_scenario_inperson40", startCol=111, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*Inputs!D40", startCol=111, startRow=2)
-  # Fórmula 178: Dimensão 3 - Specialist Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_specialist_trainers_scenario_inperson40", startCol=112, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D43*Inputs!D44*(Inputs!D42*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61))", startCol=112, startRow=2)
-  # Fórmula 179: Dimensão 3 - Course for Trainers (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_course_for_trainers_scenario_inperson40", startCol=113, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D43*Inputs!D44*(Inputs!D42*1.5*((Inputs!D37*(Inputs!D3/Inputs!D2))/Inputs!D61)/Inputs!D61)", startCol=113, startRow=2)
-  # Fórmula 180: Dimensão 3 - Training design (Scenario online-40)
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_3_price_training_design_scenario_inperson40", startCol=114, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D44*Inputs!D41", startCol=114, startRow=2)
-  
-  # Fórmula 181: Dimensão 4 - Teaching and learning platform
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_4_price_teaching_learning_platform", startCol=115, startRow=1)
-  writeFormula(wb, sheet="Results", x="=((Inputs!D6+Inputs!D5)*(Inputs!D3/Inputs!D2))*Inputs!D33*Inputs!D62*(Inputs!D45/12)", startCol=115, startRow=2)
-  # Fórmula 182: Dimensão 4 - Management platform
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_4_price_management_platform", startCol=116, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D3*Inputs!D34*Inputs!D63*(Inputs!D45/12)", startCol=116, startRow=2)
-  
-  # Fórmula 183: Dimensão 5 - Central team
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_central_team", startCol=117, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D35*((Inputs!D64+Inputs!D65)/2)*Inputs!D45", startCol=117, startRow=2)
-  # Fórmula 184: Dimensão 5 - Regional team
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_regional_team", startCol=118, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D66*Inputs!D3*Inputs!D36*Inputs!D45", startCol=118, startRow=2)
-  # Fórmula 185: Dimensão 5 - Local team
-  writeData(wb, sheet = "Results", x="sce2_rur_dim_5_price_local_team", startCol=119, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D68*Inputs!D3*Inputs!D36*Inputs!D45", startCol=119, startRow=2)
-  
-  # Fórmula 186: Total da dimensão 1
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_1_total", startCol=21, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!CC2:CJ2)", startCol=21, startRow=2)
-  
-  # Fórmula 187: Total da dimensão 2 (min)
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_min", startCol=22, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CK2+Results!CN2+Results!CO2+Results!CP2+Results!CS2+Results!CT2", startCol=22, startRow=2)
-  # Fórmula 188: Total da dimensão 2 (mild)
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_mild", startCol=23, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CL2+Results!CN2+Results!CO2+Results!CQ2+Results!CS2+Results!CU2", startCol=23, startRow=2)
-  # Fórmula 189: Total da dimensão 2 (comprehensive)
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_2_total_comprehensive", startCol=24, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CM2+Results!CN2+Results!CO2+Results!CR2+Results!CS2+Results!CV2", startCol=24, startRow=2)
-  
-  # Fórmula 190: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_online_60", startCol=25, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CW2+Results!CX2+Results!CY2+Results!CZ2+Results!DA2+Results!DB2", startCol=25, startRow=2)
-  # Fórmula 191: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_online_40", startCol=26, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CW2+Results!CX2+Results!DC2+Results!DD2+Results!DE2+Results!DF2", startCol=26, startRow=2)
-  # Fórmula 192: Total da dimensão 3
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_3_total_inperson_40", startCol=27, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!CW2+Results!CX2+Results!DG2+Results!DH2+Results!DI2+Results!DJ2", startCol=27, startRow=2)
-  
-  # Fórmula 193: Total da dimensão 4
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_4_total", startCol=28, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=Results!DK2+Results!DL2", startCol=28, startRow=2)
-  # Fórmula 194: Total da dimensão 5
-  writeData(wb, sheet = "TotalDimension", x="sce2_rur_dim_5_total", startCol=29, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!DM2:DO2)", startCol=29, startRow=2)
-  
-  # Fórmula 195: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60", startCol=75, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!V2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2", startCol=75, startRow=2)
-  # Fórmula 196: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40", startCol=76, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!V2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2", startCol=76, startRow=2)
-  # Fórmula 197: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40", startCol=77, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!V2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2", startCol=77, startRow=2)
-  # Fórmula 198: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60", startCol=78, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!W2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2", startCol=78, startRow=2)
-  # Fórmula 199: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40", startCol=79, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!W2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2", startCol=79, startRow=2)
-  # Fórmula 200: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40", startCol=80, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!W2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2", startCol=80, startRow=2)
-  # Fórmula 201: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60", startCol=81, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!X2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2", startCol=81, startRow=2)
-  # Fórmula 202: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40", startCol=82, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!X2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2", startCol=82, startRow=2)
-  # Fórmula 203: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40", startCol=83, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!U2+TotalDimension!X2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2", startCol=83, startRow=2)
-  
-  
-  # Fórmula 204: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_online_60", startCol=84, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=84, startRow=2)
-  # Fórmula 205: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_online_40", startCol=85, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=85, startRow=2)
-  # Fórmula 206: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_inperson_40", startCol=86, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=86, startRow=2)
-  # Fórmula 207: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_online_60", startCol=87, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=87, startRow=2)
-  # Fórmula 208: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_online_40", startCol=88, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=88, startRow=2)
-  # Fórmula 209: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_inperson_40", startCol=89, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=89, startRow=2)
-  # Fórmula 136: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_online_60", startCol=90, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=90, startRow=2)
-  # Fórmula 137: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_online_40", startCol=91, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=91, startRow=2)
-  # Fórmula 138: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_inperson_40", startCol=92, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D4", startCol=92, startRow=2)
-  
-  # Fórmula 139: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_online_60", startCol=93, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=93, startRow=2)
-  # Fórmula 140: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_online_40", startCol=94, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=94, startRow=2)
-  # Fórmula 141: Total Geral para Cenário Mínimo de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_inperson_40", startCol=95, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=95, startRow=2)
-  
-  # Fórmula 142: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_online_60", startCol=96, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=96, startRow=2)
-  # Fórmula 143: Total Geral para Cenário Moderado de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_online_40", startCol=97, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=97, startRow=2)
-  # Fórmula 144: Total Geral para Cenário Moderado de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_inperson_40", startCol=98, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=98, startRow=2)
-  
-  # Fórmula 145: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 60h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_online_60", startCol=99, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=99, startRow=2)
-  # Fórmula 146: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Online 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_online_40", startCol=100, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=100, startRow=2)
-  # Fórmula 147: Total Geral para Cenário Abrangente de Dispositivos e Treinamento Presencial 40h
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_inperson_40", startCol=101, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)/Inputs!D3", startCol=101, startRow=2)
-  
-  # Fórmula 148: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60_menos_25", startCol=102, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=102, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60_mais_25", startCol=103, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=103, startRow=2)
-  
-  # Fórmula 149: Range para Total Geral (Mínimo de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40_menos_25", startCol=104, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=104, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40_mais_25", startCol=105, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=105, startRow=2)
-  
-  # Fórmula 150: Range para Total Geral (Mínimo de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40_menos_25", startCol=106, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=106, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40_mais_25", startCol=107, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!V2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=107, startRow=2)
-  
-  # Fórmula 151: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60_menos_25", startCol=108, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=108, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60_mais_25", startCol=109, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=109, startRow=2)
-  
-  # Fórmula 152: Range para Total Geral (Moderado de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40_menos_25", startCol=110, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=110, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40_mais_25", startCol=111, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=111, startRow=2)
-  
-  # Fórmula 153: Range para Total Geral (Moderado de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40_menos_25", startCol=112, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=112, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40_mais_25", startCol=113, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!W2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=113, startRow=2)
-  
-  # Fórmula 154: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 60h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60_menos_25", startCol=114, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=114, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60_mais_25", startCol=115, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Y2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=115, startRow=2)
-  
-  # Fórmula 155: Range para Total Geral (Abrangente de Dispositivos e Treinamento Online 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40_menos_25", startCol=116, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=116, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40_mais_25", startCol=117, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!Z2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=117, startRow=2)
-  
-  # Fórmula 156: Range para Total Geral (Abrangente de Dispositivos e Treinamento Presencial 40h)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40_menos_25", startCol=118, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*0.75", startCol=118, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40_mais_25", startCol=119, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!U2+TotalDimension!X2+TotalDimension!AA2+TotalDimension!AB2+TotalDimension!AC2)*1.25", startCol=119, startRow=2)
-  
-  
-  
-  
-  #---------- CENÁRIO 3 ----------
-  
-  # Fórmula 185: Dimensão 2: Apenas equipamentos para professores e escolas
-  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_device_teacher", startCol=120, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D7*Inputs!D58*Inputs!D31", startCol=120, startRow=2)
-  # Fórmula 185: Dimensão 2: Apenas equipamentos para professores e escolas
-  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_device_school", startCol=121, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D59*Inputs!D29", startCol=121, startRow=2)
-  # Fórmula 185: Dimensão 2: Apenas equipamentos para professores e escolas
-  writeData(wb, sheet = "Results", x="sce3_devt_dim_2_price_multimedia_projector", startCol=122, startRow=1)
-  writeFormula(wb, sheet="Results", x="=Inputs!D2*Inputs!D60*Inputs!D26", startCol=122, startRow=2)
-  
-  # Fórmula 187: Total da dimensão 2 (min)
-  writeData(wb, sheet = "TotalDimension", x="sce3_devt_dim_2_total", startCol=30, startRow=1)
-  writeFormula(wb, sheet="TotalDimension", x="=SUM(Results!DP2:DR2)/1000000", startCol=30, startRow=2)
-  
-  # Fórmula 156: Totais Gerais combinando com demais dimensões existentes
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60", startCol=120, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!AD2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2", startCol=120, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40", startCol=121, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!AD2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2", startCol=121, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40", startCol=122, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=TotalDimension!C2+TotalDimension!AD2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2", startCol=122, startRow=2)
-  
-  # --- Faixas de variação ±25% ---
-  
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60_menos_25", startCol=123, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=123, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60_mais_25", startCol=124, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!G2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=124, startRow=2)
-  
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40_menos_25", startCol=125, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=125, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40_mais_25", startCol=126, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!H2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=126, startRow=2)
-  
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40_menos_25", startCol=127, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*0.75", startCol=127, startRow=2)
-  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40_mais_25", startCol=128, startRow=1)
-  writeFormula(wb, sheet="Scenarios", x="=(TotalDimension!C2+TotalDimension!AD2+TotalDimension!I2+TotalDimension!J2+TotalDimension!K2)*1.25", startCol=128, startRow=2)
-  
-  #---------------------------
-  #- 3. FORMATAÇÃO DA TABELA - 
-  #---------------------------
-  
-  # Create a title style
-  cenario_0_estilo <- createStyle(border = "TopBottomLeftRight", fgFill = "#ADD8E6")
-  cenario_1_estilo <- createStyle(border = "TopBottomLeftRight", fgFill = "#FF7F7F")
-  cenario_2_estilo <- createStyle(border = "TopBottomLeftRight", fgFill = "#FFFFC5")
-  cenario_3_estilo <- createStyle(border = "TopBottomLeftRight", fgFill = "#90EE90")
-  
-  num_style <- createStyle(numFmt = "0", border = "TopBottomLeftRight")
-  general_style <- createStyle(border = "TopBottomLeftRight")
-  
-  addStyle(wb, sheet="Results", cenario_0_estilo, rows = 1, cols = 3:41)
-  addStyle(wb, sheet="Results", cenario_1_estilo, rows = 1, cols = 42:80)
-  addStyle(wb, sheet="Results", cenario_2_estilo, rows = 1, cols = 81:119)
-  addStyle(wb, sheet="Results", cenario_3_estilo, rows = 1, cols = 120:122)
-  
-  addStyle(wb, sheet="TotalDimension", cenario_0_estilo, rows = 1, cols = 3:11)
-  addStyle(wb, sheet="TotalDimension", cenario_1_estilo, rows = 1, cols = 12:20)
-  addStyle(wb, sheet="TotalDimension", cenario_2_estilo, rows = 1, cols = 21:29)
-  addStyle(wb, sheet="TotalDimension", cenario_3_estilo, rows = 1, cols = 30)
-  
-  addStyle(wb, sheet="Scenarios", cenario_0_estilo, rows = 1, cols = 3:29)
-  addStyle(wb, sheet="Scenarios", cenario_1_estilo, rows = 1, cols = 30:74)
-  addStyle(wb, sheet="Scenarios", cenario_2_estilo, rows = 1, cols = 75:119)
-  addStyle(wb, sheet="Scenarios", cenario_3_estilo, rows = 1, cols = 120:128)
-  
-  addStyle(wb, sheet="Inputs", num_style, rows = 2:68, cols = 4)
-  addStyle(wb, sheet="Results", num_style, rows = 2, cols = 3:122)
-  addStyle(wb, sheet="TotalDimension", num_style, rows = 2, cols = 3:30)
-  addStyle(wb, sheet="Scenarios", num_style, rows = 2, cols = 3:128)
-  
-  
-  addStyle(wb, sheet="Inputs", general_style, rows = 1:68, cols = 1)
-  addStyle(wb, sheet="Inputs", general_style, rows = 1:68, cols = 2)
-  addStyle(wb, sheet="Inputs", general_style, rows = 1:68, cols = 3)
-  addStyle(wb, sheet="Inputs", general_style, rows = 1, cols = 4)
-  
-  addStyle(wb, sheet="Results", general_style, rows = 1, cols = 1:2)
-  addStyle(wb, sheet="Results", general_style, rows = 2, cols = 1:2)
-  
-  addStyle(wb, sheet="TotalDimension", general_style, rows = 1, cols = 1:2)
-  addStyle(wb, sheet="TotalDimension", general_style, rows = 2, cols = 1:2)
-  
-  addStyle(wb, sheet="Scenarios", general_style, rows = 1, cols = 1:2)
-  addStyle(wb, sheet="Scenarios", general_style, rows = 2, cols = 1:2)
-  
-  #----------------------------
-  #- 4. SALVA O ARQUIVO FINAL - 
-  #----------------------------
-  
-  # Salva o arquivo 
-  saveWorkbook(wb, file = caminho_output, overwrite = T)
+  # Nome do país
+  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!A", 1), startCol=1, startRow=1)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!A", 2), startCol=2, startRow=1)
+  # Nome da subregião
+  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!B", 1), startCol=1, startRow=2)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=Inputs!B", 2), startCol=2, startRow=2)
+  
+  #---- Scenarios: Cenário geral -----
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60", startCol=1, startRow=3)
+  total_geral_min_dev_online_60 <- paste0(dim_1_total, "+", dim_2_total_min, "+", dim_3_total_online_60, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_60), startCol=2, startRow=3)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40", startCol=1, startRow=4)
+  total_geral_min_dev_online_40 <- paste0(dim_1_total, "+", dim_2_total_min, "+", dim_3_total_online_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_40), startCol=2, startRow=4)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40", startCol=1, startRow=5)
+  total_geral_min_dev_inperson_40 <- paste0(dim_1_total, "+", dim_2_total_min, "+", dim_3_total_inperson_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_inperson_40), startCol=2, startRow=5)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60", startCol=1, startRow=6)
+  total_geral_mild_dev_online_60 <- paste0(dim_1_total, "+", dim_2_total_mild, "+", dim_3_total_online_60, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_60), startCol=2, startRow=6)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40", startCol=1, startRow=7)
+  total_geral_mild_dev_online_40 <- paste0(dim_1_total, "+", dim_2_total_mild, "+", dim_3_total_online_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_40), startCol=2, startRow=7)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40", startCol=1, startRow=8)
+  total_geral_mild_dev_inperson_40 <- paste0(dim_1_total, "+", dim_2_total_mild, "+", dim_3_total_inperson_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_inperson_40), startCol=2, startRow=8)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60", startCol=1, startRow=9)
+  total_geral_comp_dev_online_60 <- paste0(dim_1_total, "+", dim_2_total_comprehensive, "+", dim_3_total_online_60, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_60), startCol=2, startRow=9)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40", startCol=1, startRow=10)
+  total_geral_comp_dev_online_40 <- paste0(dim_1_total, "+", dim_2_total_comprehensive, "+", dim_3_total_online_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_40), startCol=2, startRow=10)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40", startCol=1, startRow=11)
+  total_geral_comp_dev_inperson_40 <- paste0(dim_1_total, "+", dim_2_total_comprehensive, "+", dim_3_total_inperson_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_inperson_40), startCol=2, startRow=11)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60_menos_25", startCol=1, startRow=12)
+  total_geral_min_dev_online_60_menos_25 <- paste0("(", total_geral_min_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_60_menos_25), startCol=2, startRow=12)
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_60_mais_25", startCol=1, startRow=13)
+  total_geral_min_dev_online_60_mais_25 <- paste0("(", total_geral_min_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_60_mais_25), startCol=2, startRow=13)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40_menos_25", startCol=1, startRow=14)
+  total_geral_min_dev_online_40_menos_25 <- paste0("(", total_geral_min_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_40_menos_25), startCol=2, startRow=14)
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_online_40_mais_25", startCol=1, startRow=15)
+  total_geral_min_dev_online_40_mais_25 <- paste0("(", total_geral_min_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_online_40_mais_25), startCol=2, startRow=15)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40_menos_25", startCol=1, startRow=16)
+  total_geral_min_dev_inperson_40_menos_25 <- paste0("(", total_geral_min_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_inperson_40_menos_25), startCol=2, startRow=16)
+  writeData(wb, sheet = "Scenarios", x="total_geral_min_dev_inperson_40_mais_25", startCol=1, startRow=17)
+  total_geral_min_dev_inperson_40_mais_25 <- paste0("(", total_geral_min_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_min_dev_inperson_40_mais_25), startCol=2, startRow=17)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60_menos_25", startCol=1, startRow=18)
+  total_geral_mild_dev_online_60_menos_25 <- paste0("(", total_geral_mild_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_60_menos_25), startCol=2, startRow=18)
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_60_mais_25", startCol=1, startRow=19)
+  total_geral_mild_dev_online_60_mais_25 <- paste0("(", total_geral_mild_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_60_mais_25), startCol=2, startRow=19)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40_menos_25", startCol=1, startRow=20)
+  total_geral_mild_dev_online_40_menos_25 <- paste0("(", total_geral_mild_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_40_menos_25), startCol=2, startRow=20)
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_online_40_mais_25", startCol=1, startRow=21)
+  total_geral_mild_dev_online_40_mais_25 <- paste0("(", total_geral_mild_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_online_40_mais_25), startCol=2, startRow=21)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40_menos_25", startCol=1, startRow=22)
+  total_geral_mild_dev_inperson_40_menos_25 <- paste0("(", total_geral_mild_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_inperson_40_menos_25), startCol=2, startRow=22)
+  writeData(wb, sheet = "Scenarios", x="total_geral_mild_dev_inperson_40_mais_25", startCol=1, startRow=23)
+  total_geral_mild_dev_inperson_40_mais_25 <- paste0("(", total_geral_mild_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_mild_dev_inperson_40_mais_25), startCol=2, startRow=23)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60_menos_25", startCol=1, startRow=24)
+  total_geral_comp_dev_online_60_menos_25 <- paste0("(", total_geral_comp_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_60_menos_25), startCol=2, startRow=24)
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_60_mais_25", startCol=1, startRow=25)
+  total_geral_comp_dev_online_60_mais_25 <- paste0("(", total_geral_comp_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_60_mais_25), startCol=2, startRow=25)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40_menos_25", startCol=1, startRow=26)
+  total_geral_comp_dev_online_40_menos_25 <- paste0("(", total_geral_comp_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_40_menos_25), startCol=2, startRow=26)
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_online_40_mais_25", startCol=1, startRow=27)
+  total_geral_comp_dev_online_40_mais_25 <- paste0("(", total_geral_comp_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_online_40_mais_25), startCol=2, startRow=27)
+  
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40_menos_25", startCol=1, startRow=28)
+  total_geral_comp_dev_inperson_40_menos_25 <- paste0("(", total_geral_comp_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_inperson_40_menos_25), startCol=2, startRow=28)
+  writeData(wb, sheet = "Scenarios", x="total_geral_comp_dev_inperson_40_mais_25", startCol=1, startRow=29)
+  total_geral_comp_dev_inperson_40_mais_25 <- paste0("(", total_geral_comp_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", total_geral_comp_dev_inperson_40_mais_25), startCol=2, startRow=29)
+  
+  #---- Scenarios: Cenário 1 -----
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60", startCol=1, startRow=30)
+  sce1_sec_total_geral_min_dev_online_60 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_min, "+", sce1_sec_dim_3_total_online_60, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_60), startCol=2, startRow=30)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40", startCol=1, startRow=31)
+  sce1_sec_total_geral_min_dev_online_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_min, "+", sce1_sec_dim_3_total_online_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_40), startCol=2, startRow=31)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40", startCol=1, startRow=32)
+  sce1_sec_total_geral_min_dev_inperson_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_min, "+", sce1_sec_dim_3_total_inperson_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_inperson_40), startCol=2, startRow=32)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60", startCol=1, startRow=33)
+  sce1_sec_total_geral_mild_dev_online_60 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_mild, "+", sce1_sec_dim_3_total_online_60, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_60), startCol=2, startRow=33)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40", startCol=1, startRow=34)
+  sce1_sec_total_geral_mild_dev_online_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_mild, "+", sce1_sec_dim_3_total_online_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_40), startCol=2, startRow=34)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40", startCol=1, startRow=35)
+  sce1_sec_total_geral_mild_dev_inperson_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_mild, "+", sce1_sec_dim_3_total_inperson_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_inperson_40), startCol=2, startRow=35)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60", startCol=1, startRow=36)
+  sce1_sec_total_geral_comp_dev_online_60 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_comprehensive, "+", sce1_sec_dim_3_total_online_60, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_60), startCol=2, startRow=36)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40", startCol=1, startRow=37)
+  sce1_sec_total_geral_comp_dev_online_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_comprehensive, "+", sce1_sec_dim_3_total_online_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_40), startCol=2, startRow=37)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40", startCol=1, startRow=38)
+  sce1_sec_total_geral_comp_dev_inperson_40 <- paste0(sce1_sec_dim_1_total, "+", sce1_sec_dim_2_total_comprehensive, "+", sce1_sec_dim_3_total_inperson_40, "+", sce1_sec_dim_4_total, "+", sce1_sec_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_inperson_40), startCol=2, startRow=38)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_online_60", startCol=1, startRow=39)
+  sce1_sec_total_por_aluno_min_dev_online_60 <- paste0("(", sce1_sec_total_geral_min_dev_online_60, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_min_dev_online_60 <- str_replace_all(sce1_sec_total_por_aluno_min_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_min_dev_online_60), startCol=2, startRow=39)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_online_40", startCol=1, startRow=40)
+  sce1_sec_total_por_aluno_min_dev_online_40 <- paste0("(", sce1_sec_total_geral_min_dev_online_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_min_dev_online_40 <- str_replace_all(sce1_sec_total_por_aluno_min_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_min_dev_online_40), startCol=2, startRow=40)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_min_dev_inperson_40", startCol=1, startRow=41)
+  sce1_sec_total_por_aluno_min_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_min_dev_inperson_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_min_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_aluno_min_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_min_dev_inperson_40), startCol=2, startRow=41)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_online_60", startCol=1, startRow=42)
+  sce1_sec_total_por_aluno_mild_dev_online_60 <- paste0("(", sce1_sec_total_geral_mild_dev_online_60, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_mild_dev_online_60 <- str_replace_all(sce1_sec_total_por_aluno_mild_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_mild_dev_online_60), startCol=2, startRow=42)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_online_40", startCol=1, startRow=43)
+  sce1_sec_total_por_aluno_mild_dev_online_40 <- paste0("(", sce1_sec_total_geral_mild_dev_online_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_mild_dev_online_40 <- str_replace_all(sce1_sec_total_por_aluno_mild_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_mild_dev_online_40), startCol=2, startRow=43)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_mild_dev_inperson_40", startCol=1, startRow=44)
+  sce1_sec_total_por_aluno_mild_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_mild_dev_inperson_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_mild_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_aluno_mild_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_mild_dev_inperson_40), startCol=2, startRow=44)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_online_60", startCol=1, startRow=45)
+  sce1_sec_total_por_aluno_comp_dev_online_60 <- paste0("(", sce1_sec_total_geral_comp_dev_online_60, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_comp_dev_online_60 <- str_replace_all(sce1_sec_total_por_aluno_comp_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_comp_dev_online_60), startCol=2, startRow=45)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_online_40", startCol=1, startRow=46)
+  sce1_sec_total_por_aluno_comp_dev_online_40 <- paste0("(", sce1_sec_total_geral_comp_dev_online_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_comp_dev_online_40 <- str_replace_all(sce1_sec_total_por_aluno_comp_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_comp_dev_online_40), startCol=2, startRow=46)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_aluno_comp_dev_inperson_40", startCol=1, startRow=47)
+  sce1_sec_total_por_aluno_comp_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_comp_dev_inperson_40, ")", "/number_of_students_secondary")
+  sce1_sec_total_por_aluno_comp_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_aluno_comp_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_aluno_comp_dev_inperson_40), startCol=2, startRow=47)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_online_60", startCol=1, startRow=48)
+  sce1_sec_total_por_escola_min_dev_online_60 <- paste0("(", sce1_sec_total_geral_min_dev_online_60, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_min_dev_online_60 <- str_replace_all(sce1_sec_total_por_escola_min_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_min_dev_online_60), startCol=2, startRow=48)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_online_40", startCol=1, startRow=49)
+  sce1_sec_total_por_escola_min_dev_online_40 <- paste0("(", sce1_sec_total_geral_min_dev_online_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_min_dev_online_40 <- str_replace_all(sce1_sec_total_por_escola_min_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_min_dev_online_40), startCol=2, startRow=49)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_min_dev_inperson_40", startCol=1, startRow=50)
+  sce1_sec_total_por_escola_min_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_min_dev_inperson_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_min_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_escola_min_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_min_dev_inperson_40), startCol=2, startRow=50)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_online_60", startCol=1, startRow=51)
+  sce1_sec_total_por_escola_mild_dev_online_60 <- paste0("(", sce1_sec_total_geral_mild_dev_online_60, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_mild_dev_online_60 <- str_replace_all(sce1_sec_total_por_escola_mild_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_mild_dev_online_60), startCol=2, startRow=51)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_online_40", startCol=1, startRow=52)
+  sce1_sec_total_por_escola_mild_dev_online_40 <- paste0("(", sce1_sec_total_geral_mild_dev_online_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_mild_dev_online_40 <- str_replace_all(sce1_sec_total_por_escola_mild_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_mild_dev_online_40), startCol=2, startRow=52)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_mild_dev_inperson_40", startCol=1, startRow=53)
+  sce1_sec_total_por_escola_mild_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_mild_dev_inperson_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_mild_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_escola_mild_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_mild_dev_inperson_40), startCol=2, startRow=53)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_online_60", startCol=1, startRow=54)
+  sce1_sec_total_por_escola_comp_dev_online_60 <- paste0("(", sce1_sec_total_geral_comp_dev_online_60, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_comp_dev_online_60 <- str_replace_all(sce1_sec_total_por_escola_comp_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_comp_dev_online_60), startCol=2, startRow=54)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_online_40", startCol=1, startRow=55)
+  sce1_sec_total_por_escola_comp_dev_online_40 <- paste0("(", sce1_sec_total_geral_comp_dev_online_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_comp_dev_online_40 <- str_replace_all(sce1_sec_total_por_escola_comp_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_comp_dev_online_40), startCol=2, startRow=55)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_por_escola_comp_dev_inperson_40", startCol=1, startRow=56)
+  sce1_sec_total_por_escola_comp_dev_inperson_40 <- paste0("(", sce1_sec_total_geral_comp_dev_inperson_40, ")", "/secondary_schools_cima")
+  sce1_sec_total_por_escola_comp_dev_inperson_40 <- str_replace_all(sce1_sec_total_por_escola_comp_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_por_escola_comp_dev_inperson_40), startCol=2, startRow=56)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60_menos_25", startCol=1, startRow=57)
+  sce1_sec_total_geral_min_dev_online_60_menos_25 <- paste0("(", sce1_sec_total_geral_min_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_60_menos_25), startCol=2, startRow=57)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_60_mais_25", startCol=1, startRow=58)
+  sce1_sec_total_geral_min_dev_online_60_mais_25 <- paste0("(", sce1_sec_total_geral_min_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_60_mais_25), startCol=2, startRow=58)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40_menos_25", startCol=1, startRow=59)
+  sce1_sec_total_geral_min_dev_online_40_menos_25 <- paste0("(", sce1_sec_total_geral_min_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_40_menos_25), startCol=2, startRow=59)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_online_40_mais_25", startCol=1, startRow=60)
+  sce1_sec_total_geral_min_dev_online_40_mais_25 <- paste0("(", sce1_sec_total_geral_min_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_online_40_mais_25), startCol=2, startRow=60)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40_menos_25", startCol=1, startRow=61)
+  sce1_sec_total_geral_min_dev_inperson_40_menos_25 <- paste0("(", sce1_sec_total_geral_min_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_inperson_40_menos_25), startCol=2, startRow=61)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_min_dev_inperson_40_mais_25", startCol=1, startRow=62)
+  sce1_sec_total_geral_min_dev_inperson_40_mais_25 <- paste0("(", sce1_sec_total_geral_min_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_min_dev_inperson_40_mais_25), startCol=2, startRow=62)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60_menos_25", startCol=1, startRow=63)
+  sce1_sec_total_geral_mild_dev_online_60_menos_25 <- paste0("(", sce1_sec_total_geral_mild_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_60_menos_25), startCol=2, startRow=63)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_60_mais_25", startCol=1, startRow=64)
+  sce1_sec_total_geral_mild_dev_online_60_mais_25 <- paste0("(", sce1_sec_total_geral_mild_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_60_mais_25), startCol=2, startRow=64)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40_menos_25", startCol=1, startRow=65)
+  sce1_sec_total_geral_mild_dev_online_40_menos_25 <- paste0("(", sce1_sec_total_geral_mild_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_40_menos_25), startCol=2, startRow=65)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_online_40_mais_25", startCol=1, startRow=66)
+  sce1_sec_total_geral_mild_dev_online_40_mais_25 <- paste0("(", sce1_sec_total_geral_mild_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_online_40_mais_25), startCol=2, startRow=66)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40_menos_25", startCol=1, startRow=67)
+  sce1_sec_total_geral_mild_dev_inperson_40_menos_25 <- paste0("(", sce1_sec_total_geral_mild_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_inperson_40_menos_25), startCol=2, startRow=67)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_mild_dev_inperson_40_mais_25", startCol=1, startRow=68)
+  sce1_sec_total_geral_mild_dev_inperson_40_mais_25 <- paste0("(", sce1_sec_total_geral_mild_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_mild_dev_inperson_40_mais_25), startCol=2, startRow=68)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60_menos_25", startCol=1, startRow=69)
+  sce1_sec_total_geral_comp_dev_online_60_menos_25 <- paste0("(", sce1_sec_total_geral_comp_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_60_menos_25), startCol=2, startRow=69)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_60_mais_25", startCol=1, startRow=70)
+  sce1_sec_total_geral_comp_dev_online_60_mais_25 <- paste0("(", sce1_sec_total_geral_comp_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_60_mais_25), startCol=2, startRow=70)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40_menos_25", startCol=1, startRow=71)
+  sce1_sec_total_geral_comp_dev_online_40_menos_25 <- paste0("(", sce1_sec_total_geral_comp_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_40_menos_25), startCol=2, startRow=71)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_online_40_mais_25", startCol=1, startRow=72)
+  sce1_sec_total_geral_comp_dev_online_40_mais_25 <- paste0("(", sce1_sec_total_geral_comp_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_online_40_mais_25), startCol=2, startRow=72)
+  
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40_menos_25", startCol=1, startRow=73)
+  sce1_sec_total_geral_comp_dev_inperson_40_menos_25 <- paste0("(", sce1_sec_total_geral_comp_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_inperson_40_menos_25), startCol=2, startRow=73)
+  writeData(wb, sheet = "Scenarios", x="sce1_sec_total_geral_comp_dev_inperson_40_mais_25", startCol=1, startRow=74)
+  sce1_sec_total_geral_comp_dev_inperson_40_mais_25 <- paste0("(", sce1_sec_total_geral_comp_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce1_sec_total_geral_comp_dev_inperson_40_mais_25), startCol=2, startRow=74)
+  
+  
+  #---- Scenarios: Cenário 2 -----
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60", startCol=1, startRow=75)
+  sce2_rur_total_geral_min_dev_online_60 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_min, "+", sce2_rur_dim_3_total_online_60, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_60), startCol=2, startRow=75)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40", startCol=1, startRow=76)
+  sce2_rur_total_geral_min_dev_online_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_min, "+", sce2_rur_dim_3_total_online_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_40), startCol=2, startRow=76)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40", startCol=1, startRow=77)
+  sce2_rur_total_geral_min_dev_inperson_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_min, "+", sce2_rur_dim_3_total_inperson_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_inperson_40), startCol=2, startRow=77)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60", startCol=1, startRow=78)
+  sce2_rur_total_geral_mild_dev_online_60 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_mild, "+", sce2_rur_dim_3_total_online_60, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_60), startCol=2, startRow=78)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40", startCol=1, startRow=79)
+  sce2_rur_total_geral_mild_dev_online_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_mild, "+", sce2_rur_dim_3_total_online_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_40), startCol=2, startRow=79)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40", startCol=1, startRow=80)
+  sce2_rur_total_geral_mild_dev_inperson_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_mild, "+", sce2_rur_dim_3_total_inperson_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_inperson_40), startCol=2, startRow=80)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60", startCol=1, startRow=81)
+  sce2_rur_total_geral_comp_dev_online_60 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_comprehensive, "+", sce2_rur_dim_3_total_online_60, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_60), startCol=2, startRow=81)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40", startCol=1, startRow=82)
+  sce2_rur_total_geral_comp_dev_online_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_comprehensive, "+", sce2_rur_dim_3_total_online_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_40), startCol=2, startRow=82)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40", startCol=1, startRow=83)
+  sce2_rur_total_geral_comp_dev_inperson_40 <- paste0(sce2_rur_dim_1_total, "+", sce2_rur_dim_2_total_comprehensive, "+", sce2_rur_dim_3_total_inperson_40, "+", sce2_rur_dim_4_total, "+", sce2_rur_dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_inperson_40), startCol=2, startRow=83)
+    
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_online_60", startCol=1, startRow=84)
+  sce2_rur_total_por_aluno_min_dev_online_60 <- paste0("(", sce2_rur_total_geral_min_dev_online_60, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_min_dev_online_60 <- str_replace_all(sce2_rur_total_por_aluno_min_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_min_dev_online_60), startCol=2, startRow=84)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_online_40", startCol=1, startRow=85)
+  sce2_rur_total_por_aluno_min_dev_online_40 <- paste0("(", sce2_rur_total_geral_min_dev_online_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_min_dev_online_40 <- str_replace_all(sce2_rur_total_por_aluno_min_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_min_dev_online_40), startCol=2, startRow=85)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_min_dev_inperson_40", startCol=1, startRow=86)
+  sce2_rur_total_por_aluno_min_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_min_dev_inperson_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_min_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_aluno_min_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_min_dev_inperson_40), startCol=2, startRow=86)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_online_60", startCol=1, startRow=87)
+  sce2_rur_total_por_aluno_mild_dev_online_60 <- paste0("(", sce2_rur_total_geral_mild_dev_online_60, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_mild_dev_online_60 <- str_replace_all(sce2_rur_total_por_aluno_mild_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_mild_dev_online_60), startCol=2, startRow=87)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_online_40", startCol=1, startRow=88)
+  sce2_rur_total_por_aluno_mild_dev_online_40 <- paste0("(", sce2_rur_total_geral_mild_dev_online_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_mild_dev_online_40 <- str_replace_all(sce2_rur_total_por_aluno_mild_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_mild_dev_online_40), startCol=2, startRow=88)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_mild_dev_inperson_40", startCol=1, startRow=89)
+  sce2_rur_total_por_aluno_mild_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_mild_dev_inperson_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_mild_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_aluno_mild_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_mild_dev_inperson_40), startCol=2, startRow=89)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_online_60", startCol=1, startRow=90)
+  sce2_rur_total_por_aluno_comp_dev_online_60 <- paste0("(", sce2_rur_total_geral_comp_dev_online_60, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_comp_dev_online_60 <- str_replace_all(sce2_rur_total_por_aluno_comp_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_comp_dev_online_60), startCol=2, startRow=90)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_online_40", startCol=1, startRow=91)
+  sce2_rur_total_por_aluno_comp_dev_online_40 <- paste0("(", sce2_rur_total_geral_comp_dev_online_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_comp_dev_online_40 <- str_replace_all(sce2_rur_total_por_aluno_comp_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_comp_dev_online_40), startCol=2, startRow=91)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_aluno_comp_dev_inperson_40", startCol=1, startRow=92)
+  sce2_rur_total_por_aluno_comp_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_comp_dev_inperson_40, ")", "/number_of_students")
+  sce2_rur_total_por_aluno_comp_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_aluno_comp_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_aluno_comp_dev_inperson_40), startCol=2, startRow=92)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_online_60", startCol=1, startRow=93)
+  sce2_rur_total_por_escola_min_dev_online_60 <- paste0("(", sce2_rur_total_geral_min_dev_online_60, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_min_dev_online_60 <- str_replace_all(sce2_rur_total_por_escola_min_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_min_dev_online_60), startCol=2, startRow=93)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_online_40", startCol=1, startRow=94)
+  sce2_rur_total_por_escola_min_dev_online_40 <- paste0("(", sce2_rur_total_geral_min_dev_online_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_min_dev_online_40 <- str_replace_all(sce2_rur_total_por_escola_min_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_min_dev_online_40), startCol=2, startRow=94)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_min_dev_inperson_40", startCol=1, startRow=95)
+  sce2_rur_total_por_escola_min_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_min_dev_inperson_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_min_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_escola_min_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_min_dev_inperson_40), startCol=2, startRow=95)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_online_60", startCol=1, startRow=96)
+  sce2_rur_total_por_escola_mild_dev_online_60 <- paste0("(", sce2_rur_total_geral_mild_dev_online_60, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_mild_dev_online_60 <- str_replace_all(sce2_rur_total_por_escola_mild_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_mild_dev_online_60), startCol=2, startRow=96)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_online_40", startCol=1, startRow=97)
+  sce2_rur_total_por_escola_mild_dev_online_40 <- paste0("(", sce2_rur_total_geral_mild_dev_online_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_mild_dev_online_40 <- str_replace_all(sce2_rur_total_por_escola_mild_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_mild_dev_online_40), startCol=2, startRow=97)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_mild_dev_inperson_40", startCol=1, startRow=98)
+  sce2_rur_total_por_escola_mild_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_mild_dev_inperson_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_mild_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_escola_mild_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_mild_dev_inperson_40), startCol=2, startRow=98)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_online_60", startCol=1, startRow=99)
+  sce2_rur_total_por_escola_comp_dev_online_60 <- paste0("(", sce2_rur_total_geral_comp_dev_online_60, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_comp_dev_online_60 <- str_replace_all(sce2_rur_total_por_escola_comp_dev_online_60, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_comp_dev_online_60), startCol=2, startRow=99)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_online_40", startCol=1, startRow=100)
+  sce2_rur_total_por_escola_comp_dev_online_40 <- paste0("(", sce2_rur_total_geral_comp_dev_online_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_comp_dev_online_40 <- str_replace_all(sce2_rur_total_por_escola_comp_dev_online_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_comp_dev_online_40), startCol=2, startRow=100)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_por_escola_comp_dev_inperson_40", startCol=1, startRow=101)
+  sce2_rur_total_por_escola_comp_dev_inperson_40 <- paste0("(", sce2_rur_total_geral_comp_dev_inperson_40, ")", "/number_of_rural_schools")
+  sce2_rur_total_por_escola_comp_dev_inperson_40 <- str_replace_all(sce2_rur_total_por_escola_comp_dev_inperson_40, map_df)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_por_escola_comp_dev_inperson_40), startCol=2, startRow=101)
+  
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60_menos_25", startCol=1, startRow=102)
+  sce2_rur_total_geral_min_dev_online_60_menos_25 <- paste0("(", sce2_rur_total_geral_min_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_60_menos_25), startCol=2, startRow=102)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_60_mais_25", startCol=1, startRow=103)
+  sce2_rur_total_geral_min_dev_online_60_mais_25 <- paste0("(", sce2_rur_total_geral_min_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_60_mais_25), startCol=2, startRow=103)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40_menos_25", startCol=1, startRow=104)
+  sce2_rur_total_geral_min_dev_online_40_menos_25 <- paste0("(", sce2_rur_total_geral_min_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_40_menos_25), startCol=2, startRow=104)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_online_40_mais_25", startCol=1, startRow=105)
+  sce2_rur_total_geral_min_dev_online_40_mais_25 <- paste0("(", sce2_rur_total_geral_min_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_online_40_mais_25), startCol=2, startRow=105)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40_menos_25", startCol=1, startRow=106)
+  sce2_rur_total_geral_min_dev_inperson_40_menos_25 <- paste0("(", sce2_rur_total_geral_min_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_inperson_40_menos_25), startCol=2, startRow=106)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_min_dev_inperson_40_mais_25", startCol=1, startRow=107)
+  sce2_rur_total_geral_min_dev_inperson_40_mais_25 <- paste0("(", sce2_rur_total_geral_min_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_min_dev_inperson_40_mais_25), startCol=2, startRow=107)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60_menos_25", startCol=1, startRow=108)
+  sce2_rur_total_geral_mild_dev_online_60_menos_25 <- paste0("(", sce2_rur_total_geral_mild_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_60_menos_25), startCol=2, startRow=108)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_60_mais_25", startCol=1, startRow=109)
+  sce2_rur_total_geral_mild_dev_online_60_mais_25 <- paste0("(", sce2_rur_total_geral_mild_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_60_mais_25), startCol=2, startRow=109)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40_menos_25", startCol=1, startRow=110)
+  sce2_rur_total_geral_mild_dev_online_40_menos_25 <- paste0("(", sce2_rur_total_geral_mild_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_40_menos_25), startCol=2, startRow=110)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_online_40_mais_25", startCol=1, startRow=111)
+  sce2_rur_total_geral_mild_dev_online_40_mais_25 <- paste0("(", sce2_rur_total_geral_mild_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_online_40_mais_25), startCol=2, startRow=111)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40_menos_25", startCol=1, startRow=112)
+  sce2_rur_total_geral_mild_dev_inperson_40_menos_25 <- paste0("(", sce2_rur_total_geral_mild_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_inperson_40_menos_25), startCol=2, startRow=112)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_mild_dev_inperson_40_mais_25", startCol=1, startRow=113)
+  sce2_rur_total_geral_mild_dev_inperson_40_mais_25 <- paste0("(", sce2_rur_total_geral_mild_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_mild_dev_inperson_40_mais_25), startCol=2, startRow=113)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60_menos_25", startCol=1, startRow=114)
+  sce2_rur_total_geral_comp_dev_online_60_menos_25 <- paste0("(", sce2_rur_total_geral_comp_dev_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_60_menos_25), startCol=2, startRow=114)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_60_mais_25", startCol=1, startRow=115)
+  sce2_rur_total_geral_comp_dev_online_60_mais_25 <- paste0("(", sce2_rur_total_geral_comp_dev_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_60_mais_25), startCol=2, startRow=115)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40_menos_25", startCol=1, startRow=116)
+  sce2_rur_total_geral_comp_dev_online_40_menos_25 <- paste0("(", sce2_rur_total_geral_comp_dev_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_40_menos_25), startCol=2, startRow=116)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_online_40_mais_25", startCol=1, startRow=117)
+  sce2_rur_total_geral_comp_dev_online_40_mais_25 <- paste0("(", sce2_rur_total_geral_comp_dev_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_online_40_mais_25), startCol=2, startRow=117)
+  
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40_menos_25", startCol=1, startRow=118)
+  sce2_rur_total_geral_comp_dev_inperson_40_menos_25 <- paste0("(", sce2_rur_total_geral_comp_dev_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_inperson_40_menos_25), startCol=2, startRow=118)
+  writeData(wb, sheet = "Scenarios", x="sce2_rur_total_geral_comp_dev_inperson_40_mais_25", startCol=1, startRow=119)
+  sce2_rur_total_geral_comp_dev_inperson_40_mais_25 <- paste0("(", sce2_rur_total_geral_comp_dev_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce2_rur_total_geral_comp_dev_inperson_40_mais_25), startCol=2, startRow=119)
+  
+  #---- Scenarios: Cenário 3 -----
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60", startCol=1, startRow=120)
+  sce3_devt_total_geral_online_60 <- paste0(dim_1_total, "+", sce3_devt_dim_2_total, "+", dim_3_total_online_60, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_60), startCol=2, startRow=120)
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40", startCol=1, startRow=121)
+  sce3_devt_total_geral_online_40 <- paste0(dim_1_total, "+", sce3_devt_dim_2_total, "+", dim_3_total_online_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_40), startCol=2, startRow=121)
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40", startCol=1, startRow=122)
+  sce3_devt_total_geral_inperson_40 <- paste0(dim_1_total, "+", sce3_devt_dim_2_total, "+", dim_3_total_inperson_40, "+", dim_4_total, "+", dim_5_total)
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_inperson_40), startCol=2, startRow=122)
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60_menos_25", startCol=1, startRow=123)
+  sce3_devt_total_geral_online_60_menos_25 <- paste0("(", sce3_devt_total_geral_online_60, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_60_menos_25), startCol=2, startRow=123)
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_60_mais_25", startCol=1, startRow=124)
+  sce3_devt_total_geral_online_60_mais_25 <- paste0("(", sce3_devt_total_geral_online_60, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_60_mais_25), startCol=2, startRow=124)
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40_menos_25", startCol=1, startRow=125)
+  sce3_devt_total_geral_online_40_menos_25 <- paste0("(", sce3_devt_total_geral_online_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_40_menos_25), startCol=2, startRow=125)
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_online_40_mais_25", startCol=1, startRow=126)
+  sce3_devt_total_geral_online_40_mais_25 <- paste0("(", sce3_devt_total_geral_online_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_online_40_mais_25), startCol=2, startRow=126)
+  
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40_menos_25", startCol=1, startRow=127)
+  sce3_devt_total_geral_inperson_40_menos_25 <- paste0("(", sce3_devt_total_geral_inperson_40, ")", "*", "0.75")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_inperson_40_menos_25), startCol=2, startRow=127)
+  writeData(wb, sheet = "Scenarios", x="sce3_devt_total_geral_inperson_40_mais_25", startCol=1, startRow=128)
+  sce3_devt_total_geral_inperson_40_mais_25 <- paste0("(", sce3_devt_total_geral_inperson_40, ")", "*", "1.25")
+  writeFormula(wb, sheet="Scenarios", x=paste0("=", sce3_devt_total_geral_inperson_40_mais_25), startCol=2, startRow=128)
+  
+  #---- Scenarios: Estilo da planilha ----
+  
+  # Estabelece o tamanho da coluna 3, que possui os nomes das variáveis
+  setColWidths(wb, sheet = "Scenarios", cols = 1, widths = 45) 
+  
+  # Estabelece os estilos das colunas da planilha
+  
+  # Inclui bordas  
+  addStyle(wb, sheet="Scenarios", general_style, rows = 1:128, cols = 1)
+  addStyle(wb, sheet="Scenarios", general_style, rows = 1:2, cols = 2)
+  # Ajusta as variáveis numéricas
+  addStyle(wb, sheet="Scenarios", num_style, rows = 3:128, cols = 2)
+  
+  #---- Retorna workbook final ----
+  
+  # Retorna o workbook
+  return(wb)
   
 }
+
 
 
 
