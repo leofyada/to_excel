@@ -1,5 +1,8 @@
 ### R ###
 
+.DS_Store
+renv/.DS_Store
+        
 # Data 
 data/
 
