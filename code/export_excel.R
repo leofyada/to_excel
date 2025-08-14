@@ -13,8 +13,14 @@ df_parametros_limpa_reshaped <- reshape2::melt(data = df_parametros_limpa, id.va
 df_parametros_limpa_aj_reshaped <- reshape2::melt(data = df_parametros_limpa_aj, id.vars = c("country", "subregion"))
 
 # Estilos
-num_style <- createStyle(numFmt = "0", border = "TopBottomLeftRight", halign = "CENTER", valign = "CENTER")
+num_style_init <- createStyle(numFmt = "0", border = "TopBottomLeftRight", halign = "CENTER", valign = "CENTER")
+num_style <- createStyle(numFmt = "$#,##0.00", border = "TopBottomLeftRight", halign = "CENTER", valign = "CENTER")
 general_style <- createStyle(border = "TopBottomLeftRight")
+
+sce0 <- createStyle(border = "TopBottomLeftRight", fgFill = "#ADD8E6")
+sce1 <- createStyle(border = "TopBottomLeftRight", fgFill = "#FF7F7F")
+sce2 <- createStyle(border = "TopBottomLeftRight", fgFill = "#FFFFC5")
+sce3 <- createStyle(border = "TopBottomLeftRight", fgFill = "#90EE90")
 
 # Lista de países
 lista_paises <- df_parametros_limpa$country
@@ -39,7 +45,7 @@ for(pais_selecionado in lista_paises) {
   wb_results <- funcao_formulas(wb = wb_inputs, df = df_base_planilha)
   
   # Salva o arquivo 
-  saveWorkbook(wb = wb_results, file = here("output", "v1", glue("{data_hoje()}_{pais_selecionado}.xlsx")), overwrite = T)
+  saveWorkbook(wb = wb_results, file = here("output", "v2", glue("{data_hoje()}_{pais_selecionado}.xlsx")), overwrite = T)
   
 }
 
