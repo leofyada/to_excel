@@ -6,8 +6,8 @@
 source(here("code", "functions.R"))
 
 # Importa a base limpa
-df_parametros_limpa <- data.table::fread(here("data", "base_parametros_limpa.csv"))
-df_parametros_limpa_aj <- data.table::fread(here("data", "base_parametros_limpa_aj.csv"))
+df_parametros_limpa <- data.table::fread(here("data", "silver", "base_parametros_limpa.csv"))
+df_parametros_limpa_aj <- data.table::fread(here("data", "silver", "base_parametros_limpa_aj.csv"))
 # Reshape
 df_parametros_limpa_reshaped <- reshape2::melt(data = df_parametros_limpa, id.vars = c("country", "subregion"))
 df_parametros_limpa_aj_reshaped <- reshape2::melt(data = df_parametros_limpa_aj, id.vars = c("country", "subregion"))
@@ -45,10 +45,12 @@ for(pais_selecionado in lista_paises) {
   wb_results <- funcao_formulas(wb = wb_inputs, df = df_base_planilha)
   
   # Salva o arquivo 
-  saveWorkbook(wb = wb_results, file = here("output", "v2", glue("{data_hoje()}_{pais_selecionado}.xlsx")), overwrite = T)
+  saveWorkbook(wb = wb_results, file = here("output", "v3", glue("{data_hoje()}_{pais_selecionado}.xlsx")), overwrite = T)
   
 }
 
-
+# Remove tudo
+rm(list = ls())
+gc()
 
 
