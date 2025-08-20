@@ -343,7 +343,7 @@ funcao_formulas <- function(wb, df) {
   # Dimensão 3 - Training design (Scenario in-person)
   writeData(wb, sheet = "TotalperItem", x="dim_3_price_training_design_scenario_inperson40", startCol=1, startRow=33)
   
-  dim_3_price_training_design_scenario_inperson40 <- "(reference_price_training_design*reference_multiplier40h)*reference_multiplier40h*reference_multiplier_inperson"
+  dim_3_price_training_design_scenario_inperson40 <- "reference_price_training_design*reference_multiplier40h*reference_multiplier_inperson"
   dim_3_price_training_design_scenario_inperson40 <- str_replace_all(dim_3_price_training_design_scenario_inperson40, map_df)
   writeFormula(wb, sheet="TotalperItem", x=paste0("=", dim_3_price_training_design_scenario_inperson40), startCol=2, startRow=33)
   
@@ -1675,3 +1675,4 @@ funcao_formulas <- function(wb, df) {
 
 
 
+                          

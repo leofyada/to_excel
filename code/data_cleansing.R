@@ -7,16 +7,17 @@ source(here("code", "functions.R"))
 source(here("code", "data_import.R"))
 
 # Remove colunas com "source"
-df_parametros_limpa <- exclui_source(df_parametros)
+df_parametros_limpa <- exclui_source(df_product_2_final)
+df_parametros_limpa$number_of_rural_schools <- as.numeric(df_parametros_limpa$number_of_rural_schools)
 
 # Remove variáveis 
 df_parametros_limpa <- df_parametros_limpa %>% 
   select(
     -c(
-      teacher_monthly_salary, 
-      reference_price_content_production60,
-      student_primary_databank_worldbank,
-      student_secondary_databank_worldbank
+      teacher_monthly_salary,
+      reference_price_content_production60
+      #student_primary_databank_worldbank,
+      #student_secondary_databank_worldbank
     )
   )
 
@@ -88,5 +89,5 @@ colnames(df_parametros_limpa_aj)[colnames(df_parametros_limpa_aj) == "parameter_
 colnames(df_parametros_limpa_aj)[colnames(df_parametros_limpa_aj) == "parameter_local_team_rural"] <- "Parameter Local Team (Rural) (# individuals per school)"
 
 # Exporta base limpa
-data.table::fwrite(x=df_parametros_limpa, file = here("data", "base_parametros_limpa.csv"))
-data.table::fwrite(x=df_parametros_limpa_aj, file = here("data", "base_parametros_limpa_aj.csv"))
+data.table::fwrite(x=df_parametros_limpa, file = here("data", "silver", "base_parametros_limpa.csv"))
+data.table::fwrite(x=df_parametros_limpa_aj, file = here("data", "silver", "base_parametros_limpa_aj.csv"))
